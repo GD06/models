@@ -43,6 +43,9 @@ import sys
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 
+from cg_profiler.cg_graph import CompGraph
+import os
+
 flags = tf.app.flags
 
 flags.DEFINE_float('learning_rate', 0.0008, 'Constant learning rate')
@@ -164,6 +167,10 @@ class AdversarialCrypto(object):
     decrypted = self.model('bob', encrypted, in_k)
     eve_out = self.model('eve', encrypted, None)
 
+    self.encrypted = encrypted
+    self.decrypted = decrypted
+    self.eve_out = eve_out
+
     self.reset_eve_vars = tf.group(
         *[w.initializer for w in tf.get_collection('eve')])
 
@@ -219,6 +226,56 @@ def doeval(s, ac, n, itercount):
   eve_loss_percent = eve_loss_accum / (n * FLAGS.batch_size)
   print('%10d\t%20.2f\t%20.2f'%(itercount, bob_loss_percent, eve_loss_percent))
   sys.stdout.flush()
+
+  if (itercount >= 200):
+
+    options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+    run_metadata = tf.RunMetadata()
+
+    # profile the alice model.
+    alice = s.run(ac.encrypted, options=options, run_metadata=run_metadata)
+    cg = CompGraph('adversarial_crypto_alice', run_metadata, tf.get_default_graph())
+
+    cg_tensor_dict = cg.get_tensors()
+    cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    cg_sorted_items = []
+    for cg_key in cg_sorted_keys:
+      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+    cg_sorted_shape = s.run(cg_sorted_items)
+    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                   'adversarial_crypto_alice.pickle')
+
+    # profile the bob model
+    bob = s.run(ac.decrypted, options=options, run_metadata=run_metadata)
+    cg = CompGraph('adversarial_crypto_bob', run_metadata, tf.get_default_graph())
+
+    cg_tensor_dict = cg.get_tensors()
+    cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    cg_sorted_items = []
+    for cg_key in cg_sorted_keys:
+      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+    cg_sorted_shape = s.run(cg_sorted_items)
+    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                   'adversarial_crypto_bob.pickle')
+
+    # profile the eve model
+    eve = s.run(ac.eve_out, options=options, run_metadata=run_metadata)
+    cg = CompGraph('adversarial_crypto_eve', run_metadata, tf.get_default_graph())
+
+    cg_tensor_dict = cg.get_tensors()
+    cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    cg_sorted_items = []
+    for cg_key in cg_sorted_keys:
+      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+    cg_sorted_shape = s.run(cg_sorted_items)
+    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                   'adversarial_crypto_eve.pickle')
+
+    exit(0)
+
   return bob_loss_percent, eve_loss_percent
 
 
