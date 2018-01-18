@@ -3,6 +3,7 @@ from tensorflow.python.client import timeline
 import json
 import os
 import pickle
+from .cg_operator import Operator
 
 class CompGraph:
 
@@ -45,10 +46,26 @@ class CompGraph:
 
     def op_analysis(self, shape_dict, filename):
 
-        print(shape_dict)
+        op_list = []
+
+        for op_trace in self.trace_list['traceEvents']:
+            if 'dur' in op_trace.keys():
+                try:
+                    op = Operator(op_trace, self.tf_graph, self.model_name, shape_dict)
+                except KeyError as exp:
+                    # This part should be redirected to the error log
+                    print(repr(exp))
+                    continue
+
+        if os.getenv('LOG_OUTPUT_DIR') is not None:
+            full_filename = os.path.join(os.getenv('LOG_OUTPUT_DIR'), 'log',
+                                         filename)
+        else:
+            full_filename = os.path.join(os.getenv('HOME'), 'log',
+                                         filename)
+
+        with open(full_filename, 'wb') as f:
+            pickle.dump(op_list, f)
 
         return
 
-    def op_dump(self, filename):
-
-        return
