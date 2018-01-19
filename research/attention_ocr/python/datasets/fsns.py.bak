@@ -56,7 +56,7 @@ DEFAULT_CONFIG = {
 }
 
 
-def read_charset(filename, null_character='\u2591'):
+def read_charset(filename, null_character=u'\u2591'):
   """Reads a charset definition from a tab separated text file.
 
   charset file has to have format compatible with the FSNS dataset.

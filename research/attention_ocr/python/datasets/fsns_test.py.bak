@@ -20,8 +20,8 @@ import os
 import tensorflow as tf
 from tensorflow.contrib import slim
 
-from . import fsns
-from . import unittest_utils
+import fsns
+import unittest_utils
 
 FLAGS = tf.flags.FLAGS
 
@@ -38,7 +38,7 @@ def dataset_dir():
 
 class FsnsTest(tf.test.TestCase):
   def test_decodes_example_proto(self):
-    expected_label = list(range(37))
+    expected_label = range(37)
     expected_image, encoded = unittest_utils.create_random_image(
         'PNG', shape=(150, 600, 3))
     serialized = unittest_utils.create_serialized_example({
@@ -47,7 +47,7 @@ class FsnsTest(tf.test.TestCase):
         'image/class':
         expected_label,
         'image/unpadded_class':
-        list(range(10)),
+        range(10),
         'image/text': ['Raw text'],
         'image/orig_width': [150],
         'image/width': [600]

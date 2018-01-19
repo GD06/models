@@ -48,7 +48,7 @@ def load_images(file_pattern, batch_size, dataset_name):
                                   dtype='uint8')
   for i in range(batch_size):
     path = file_pattern % i
-    print("Reading %s" % path)
+    print(("Reading %s" % path))
     pil_image = PIL.Image.open(tf.gfile.GFile(path))
     images_actual_data[i, ...] = np.asarray(pil_image)
   return images_actual_data

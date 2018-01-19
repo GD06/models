@@ -17,9 +17,9 @@
 # TODO(gorban): add as a dependency, when slim or tensorflow/models are pipfied
 # Source:
 # https://raw.githubusercontent.com/tensorflow/models/a9d0e6e8923a4/slim/preprocessing/inception_preprocessing.py
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import tensorflow as tf
 

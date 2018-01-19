@@ -31,9 +31,9 @@ Usage:
   char_logits = layer.create_logits()
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import collections
 import abc
@@ -85,7 +85,7 @@ SequenceLayerParams = collections.namedtuple('SequenceLogitsParams', [
 ])
 
 
-class SequenceLayerBase(object):
+class SequenceLayerBase(object, metaclass=abc.ABCMeta):
   """A base abstruct class for all sequence layers.
 
   A child class has to define following methods:
@@ -93,7 +93,6 @@ class SequenceLayerBase(object):
     get_eval_input
     unroll_cell
   """
-  __metaclass__ = abc.ABCMeta
 
   def __init__(self, net, labels_one_hot, model_params, method_params):
     """Stores argument in member variable for further use.

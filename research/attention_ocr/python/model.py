@@ -63,7 +63,7 @@ EncodeCoordinatesParams = collections.namedtuple('EncodeCoordinatesParams', [
 def _dict_to_array(id_to_char, default_character):
   num_char_classes = max(id_to_char.keys()) + 1
   array = [default_character] * num_char_classes
-  for k, v in id_to_char.iteritems():
+  for k, v in id_to_char.items():
     array[k] = v
   return array
 
@@ -534,10 +534,10 @@ class Model(object):
                    streaming=True,
                    rej_char=self._params.null_code))
 
-      for name, value in names_to_values.iteritems():
+      for name, value in names_to_values.items():
         summary_name = 'eval/' + name
         tf.summary.scalar(summary_name, tf.Print(value, [value], summary_name))
-      return names_to_updates.values()
+      return list(names_to_updates.values())
 
   def create_init_fn_to_restore(self, master_checkpoint,
                                 inception_checkpoint=None):
@@ -565,7 +565,7 @@ class Model(object):
       all_assign_ops.append(assign_op)
       all_feed_dict.update(feed_dict)
 
-    logging.info('variables_to_restore:\n%s' % utils.variables_to_restore().keys())
+    logging.info('variables_to_restore:\n%s' % list(utils.variables_to_restore().keys()))
     logging.info('moving_average_variables:\n%s' % [v.op.name for v in tf.moving_average_variables()])
     logging.info('trainable_variables:\n%s' % [v.op.name for v in tf.trainable_variables()])
     if master_checkpoint:
