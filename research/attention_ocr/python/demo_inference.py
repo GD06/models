@@ -45,11 +45,13 @@ def get_dataset_image_size(dataset_name):
 def load_images(file_pattern, batch_size, dataset_name):
   width, height = get_dataset_image_size(dataset_name)
   images_actual_data = np.ndarray(shape=(batch_size, height, width, 3),
-                                  dtype='uint8')
+                                  dtype='float32')
   for i in range(batch_size):
     path = file_pattern % i
     print(("Reading %s" % path))
-    pil_image = PIL.Image.open(tf.gfile.GFile(path))
+    #pil_image = PIL.Image.open(tf.gfile.GFile(path))
+    pil_image = PIL.Image.open(path)
+    pil_image = pil_image.resize((width, height), PIL.Image.ANTIALIAS)
     images_actual_data[i, ...] = np.asarray(pil_image)
   return images_actual_data
 
