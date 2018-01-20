@@ -13,9 +13,9 @@
 # limitations under the License.
 # ==============================================================================
 """Virtual adversarial text models."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import csv
 import os
@@ -514,7 +514,7 @@ class VatxtBidirModel(VatxtModel):
     for (layer_name, emb, inp) in zip(['lstm', 'lstm_reverse'], embedded,
                                       inputs):
       out.append(self.layers[layer_name](emb, inp.state, inp.length))
-    lstm_outs, next_states = zip(*out)
+    lstm_outs, next_states = list(zip(*out))
 
     # Concatenate output of forward and reverse LSTMs
     lstm_out = tf.concat(lstm_outs, 1)

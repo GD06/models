@@ -27,9 +27,9 @@ Computational time:
 To initialize embedding and LSTM cell weights from a pretrained model, set
 FLAGS.pretrained_model_dir to the pretrained model's checkpoint directory.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 # Dependency imports
 

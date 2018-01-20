@@ -19,9 +19,9 @@ Computational time:
   256 embeddings, 400 truncated BP, 256 minibatch and on single GPU (Pascal
   Titan X, cuDNNv5).
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 # Dependency imports
 

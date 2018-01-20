@@ -319,7 +319,7 @@ def sort_vocab_by_frequency(vocab_freq_map):
     list<tuple<str term, int count>> sorted by count, descending.
   """
   return sorted(
-      vocab_freq_map.items(), key=operator.itemgetter(1), reverse=True)
+      list(vocab_freq_map.items()), key=operator.itemgetter(1), reverse=True)
 
 
 def write_vocab_and_frequency(ordered_vocab_freqs, output_dir):

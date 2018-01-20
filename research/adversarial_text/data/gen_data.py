@@ -23,9 +23,9 @@ Constructs 3 datasets:
   3. Data for the unsupervised SA-LSTM model that uses Seq2Seq.
      "*_sa.tfrecords".
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import os
 import string

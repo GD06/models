@@ -14,9 +14,9 @@
 # ==============================================================================
 """Evaluates text classification model."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import math
 import time
@@ -82,10 +82,10 @@ def run_eval(eval_ops, summary_writer, saver):
       return
     sv.start_queue_runners(sess)
 
-    metric_names, ops = zip(*eval_ops.items())
-    value_ops, update_ops = zip(*ops)
+    metric_names, ops = list(zip(*list(eval_ops.items())))
+    value_ops, update_ops = list(zip(*ops))
 
-    value_ops_dict = dict(zip(metric_names, value_ops))
+    value_ops_dict = dict(list(zip(metric_names, value_ops)))
 
     # Run update ops
     num_batches = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size))
@@ -102,7 +102,7 @@ def run_eval(eval_ops, summary_writer, saver):
 
 def _log_values(sess, value_ops, summary_writer=None):
   """Evaluate, log, and write summaries of the eval metrics in value_ops."""
-  metric_names, value_ops = zip(*value_ops.items())
+  metric_names, value_ops = list(zip(*list(value_ops.items())))
   values = sess.run(value_ops)
 
   tf.logging.info('Eval metric values:')

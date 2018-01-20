@@ -13,9 +13,9 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for graphs."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 from collections import defaultdict
 import operator
@@ -55,7 +55,7 @@ def _build_random_vocabulary(vocab_size=100):
 
 def _build_random_sequence(vocab_ids):
   seq_len = random.randint(10, 200)
-  ids = vocab_ids.values()
+  ids = list(vocab_ids.values())
   seq = data.SequenceWrapper()
   for token_id in [random.choice(ids) for _ in range(seq_len)]:
     seq.add_timestep().set_token(token_id)
@@ -64,7 +64,7 @@ def _build_random_sequence(vocab_ids):
 
 def _build_vocab_frequencies(seqs, vocab_ids):
   vocab_freqs = defaultdict(int)
-  ids_to_words = dict([(i, word) for word, i in vocab_ids.iteritems()])
+  ids_to_words = dict([(i, word) for word, i in vocab_ids.items()])
   for seq in seqs:
     for timestep in seq:
       vocab_freqs[ids_to_words[timestep.token]] += 1
@@ -127,7 +127,7 @@ class GraphsTest(tf.test.TestCase):
     # Write vocab.txt and vocab_freq.txt
     vocab_freqs = _build_vocab_frequencies(seqs, vocab_ids)
     ordered_vocab_freqs = sorted(
-        vocab_freqs.items(), key=operator.itemgetter(1), reverse=True)
+        list(vocab_freqs.items()), key=operator.itemgetter(1), reverse=True)
     with open(os.path.join(FLAGS.data_dir, 'vocab.txt'), 'w') as vocab_f:
       with open(os.path.join(FLAGS.data_dir, 'vocab_freq.txt'), 'w') as freq_f:
         for word, freq in ordered_vocab_freqs:

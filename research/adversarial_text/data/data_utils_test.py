@@ -13,9 +13,9 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for data_utils."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 # Dependency imports
 
@@ -146,7 +146,7 @@ class DataUtilsTest(tf.test.TestCase):
     label_seq = data.build_labeled_sequence(bidir_seq, True)
 
     for (i, ts), j in zip(
-        enumerate(label_seq[:-1]), reversed(range(len(seq) - 1))):
+        enumerate(label_seq[:-1]), reversed(list(range(len(seq) - 1)))):
       self.assertAllEqual(ts.tokens, [i, j])
       self.assertEqual(ts.label, 0)
       self.assertEqual(ts.weight, 0.0)
@@ -176,7 +176,7 @@ class DataUtilsTest(tf.test.TestCase):
     reverse_seq = data.build_reverse_sequence(seq)
     bidir_seq = data.build_bidirectional_seq(seq, reverse_seq)
     for (i, ts), j in zip(
-        enumerate(bidir_seq[:-1]), reversed(range(len(seq) - 1))):
+        enumerate(bidir_seq[:-1]), reversed(list(range(len(seq) - 1)))):
       self.assertAllEqual(ts.tokens, [i, j])
       self.assertEqual(ts.label, 0)
       self.assertEqual(ts.weight, 0.0)

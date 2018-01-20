@@ -13,9 +13,9 @@
 # limitations under the License.
 # ==============================================================================
 """Layers for VatxtModel."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 from six.moves import xrange  # pylint: disable=redefined-builtin
 
 # Dependency imports
@@ -116,7 +116,7 @@ class LSTM(object):
               self.cell_size,
               forget_bias=0.0,
               reuse=tf.get_variable_scope().reuse)
-          for _ in xrange(self.num_layers)
+          for _ in range(self.num_layers)
       ])
 
       # shape(x) = (batch_size, num_timesteps, embedding_dim)
@@ -311,9 +311,9 @@ def optimize(loss,
     embedding_grads_and_vars = [(g, v) for (g, v) in zip(grads, tvars)
                                 if 'embedding' in v.op.name]
 
-    ne_grads, ne_vars = zip(*non_embedding_grads_and_vars)
+    ne_grads, ne_vars = list(zip(*non_embedding_grads_and_vars))
     ne_grads, _ = tf.clip_by_global_norm(ne_grads, max_grad_norm)
-    non_embedding_grads_and_vars = zip(ne_grads, ne_vars)
+    non_embedding_grads_and_vars = list(zip(ne_grads, ne_vars))
 
     grads_and_vars = embedding_grads_and_vars + non_embedding_grads_and_vars
 

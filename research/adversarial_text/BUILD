@@ -10,6 +10,7 @@ py_binary(
         # google3 file dep,
         # tensorflow dep,
     ],
+    srcs_version = "PY3",
 )
 
 py_binary(
@@ -62,7 +63,7 @@ py_library(
     srcs = ["inputs.py"],
     deps = [
         # tensorflow dep,
-        "//adversarial_text/data:data_utils",
+        #"//adversarial_text/data:data_utils",
     ],
 )
 
@@ -94,4 +95,12 @@ py_test(
         # tensorflow dep,
         "//adversarial_text/data:data_utils",
     ],
+)
+
+# Runtime
+# ==============================================================================
+py_runtime(
+    name = "python3",
+    files = [],
+    interpreter_path = "/usr/bin/python3",
 )
