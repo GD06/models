@@ -92,5 +92,9 @@ ENV/
 # PyCharm
 .idea/
 
-bazel-*/
+bazel-bin
+bazel-genfiles
+bazel-out
+bazel-models
+bazel-testlogs
 
