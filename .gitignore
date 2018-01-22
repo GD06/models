@@ -92,5 +92,5 @@ ENV/
 # PyCharm
 .idea/
 
-bazel-*/
+bazel-*
 
