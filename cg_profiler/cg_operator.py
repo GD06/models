@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import math
 
 class Operator:
 
@@ -92,40 +93,99 @@ class Operator:
         raise NotImplementedError
 
     def _calculate_parallelism(self, tf_opr):
-        return 1.0
+
+        elementwise_op_set = {'Mul', 'Sub', 'Cast', 'ConcatV2', 'BiasAdd',
+                              'Sigmoid', 'Tanh'}
+
+        if self.is_aid_op:
+            return 0.0
+
+        if self.op_type == 'MatMul':
+            return self._cal_par_matmul(tf_opr)
+
+        if self.op_type == 'Conv2D':
+            return self._cal_par_conv2d(tf_opr)
+
+        if self.op_type in elementwise_op_set:
+            return 1.0
+
+        print('op_type: ', self.op_type)
+        raise NotImplementedError
 
 
 
     def _cal_comp_elementwise(self, tf_opr):
         tmp_list = self.output_tensor_shape[0]
-        return np.prod(np.array(tmp_list))
+        comp_ops = 2 * np.prod(np.array(tmp_list))
+        return comp_ops
 
-    def _cal_comp_matmul(self, tf_opr):
-        comp_ops = 1
+    def _extract_m_n_k(self):
+        k_sqr = 1
         assert len(self.input_tensor_shape) == 2
+        assert len(self.output_tensor_shape) == 1
+        assert len(self.output_tensor_shape[0]) == 2
 
         for input_tensor_shape in self.input_tensor_shape:
-            comp_ops = comp_ops * np.prod(np.array(input_tensor_shape))
+            k_sqr = k_sqr * np.prod(np.array(input_tensor_shape))
 
-        for each_dim in self.input_tensor_shape[0]:
-            if each_dim in set(self.input_tensor_shape[1]):
-                comp_ops = comp_ops / each_dim
-                break
+        for output_tensor_shape  in self.output_tensor_shape:
+            k_sqr = k_sqr / np.prod(np.array(output_tensor_shape))
+            m = output_tensor_shape[0]
+            n = output_tensor_shape[1]
 
+        return m, n, math.sqrt(k_sqr)
+
+    def _cal_comp_matmul(self, tf_opr):
+        m, n, k = self._extract_m_n_k()
+        comp_ops = 2 * m * n * k
         return comp_ops
+
+    def _cal_par_matmul(self, tf_opr):
+        M, N, K = self._extract_m_n_k()
+        par_ratio = 0.5 + (math.log2(K) / (2 * K))
+        return par_ratio
+
+    def _extract_conv2d_params(self, tf_opr):
+        conv_args = {}
+        assert len(self.input_tensor_shape) == 2
+        assert len(self.output_tensor_shape) == 1
+        assert len(self.input_tensor_shape[0]) == 4
+        assert len(self.input_tensor_shape[1]) == 4
+        assert len(self.output_tensor_shape[0]) == 4
+
+        if (tf_opr.get_attr('data_format') == b'NHWC'
+                or tf_opr.get_attr('data_format')  == 'NHWC'):
+            conv_args['ON'] = self.output_tensor_shape[0][0]
+            conv_args['OH'] = self.output_tensor_shape[0][1]
+            conv_args['OW'] = self.output_tensor_shape[0][2]
+            conv_args['OC'] = self.output_tensor_shape[0][3]
+        else:
+            conv_args['ON'] = self.output_tensor_shape[0][0]
+            conv_args['OC'] = self.output_tensor_shape[0][1]
+            conv_args['OH'] = self.output_tensor_shape[0][2]
+            conv_args['OW'] = self.output_tensor_shape[0][3]
+
+        conv_args['FH'] = self.input_tensor_shape[1][0]
+        conv_args['FW'] = self.input_tensor_shape[1][1]
+        conv_args['IC'] = self.input_tensor_shape[1][2]
+        assert conv_args['OC'] == self.input_tensor_shape[1][3]
+
+        conv_args['IN'] = conv_args['ON']
+
+        return conv_args
 
     def _cal_comp_conv2d(self, tf_opr):
-
         comp_ops = 1
 
-        comp_ops = comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
-        comp_ops = comp_ops * np.prod(np.array(self.input_tensor_shape[1]))
-
-        if tf_opr.get_attr('data_format') == 'NHWC':
-            oc = self.output_tensor_shape[0][3]
-        else:
-            oc = self.output_tensor_shape[0][1]
-
-        comp_ops = comp_ops / oc
+        conv_args = self._extract_conv2d_params(tf_opr)
+        comp_ops = 2 * comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
+        comp_ops = comp_ops * conv_args['IC'] * conv_args['FH'] * conv_args['FW']
 
         return comp_ops
+
+    def _cal_par_conv2d(self, tf_opr):
+        conv_args = self._extract_conv2d_params(tf_opr)
+        K = conv_args['IC'] * conv_args['FH'] * conv_args['FW']
+        par_ratio = 0.5 + (math.log2(K) / (2 * K))
+        return par_ratio
+
