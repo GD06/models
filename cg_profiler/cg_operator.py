@@ -47,10 +47,19 @@ class Operator:
     def _calculate_mem_trans(self, tf_opr):
 
         known_op_set = {'Mul', 'Sub', 'Cast', 'ConcatV2', 'MatMul',
-                        'BiasAdd', 'Conv2D', 'Sigmoid', 'Tanh'}
+                        'BiasAdd', 'Conv2D', 'Sigmoid', 'Tanh', 'Add',
+                        'Min', 'GreaterEqual', 'Max', 'LessEqual',
+                        'LogicalNot', 'Greater', 'Gather', 'Sum', 'Transpose',
+                        'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
+                        'Relu', 'Equal', 'AssignAdd'}
 
         if self.is_aid_op:
             return 0
+
+        if (self.op_type == 'Switch' or self.op_type == 'Select'):
+            return self._cal_mem_switch()
+        if self.op_type == 'Where':
+            return self._cal_mem_where()
 
         if self.op_type in known_op_set:
             total_mem_trans = 0
@@ -75,7 +84,13 @@ class Operator:
     def _calculate_comp_instrs(self, tf_opr):
 
         elementwise_op_set = {'Mul', 'Sub', 'Cast', 'ConcatV2', 'BiasAdd',
-                              'Sigmoid', 'Tanh'}
+                              'Sigmoid', 'Tanh', 'Add', 'Min', 'GreaterEqual',
+                              'Max', 'LessEqual', 'Switch', 'LogicalNot',
+                              'Greater', 'Where', 'Gather', 'Transpose',
+                              'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
+                              'Select', 'Relu', 'Equal', 'AssignAdd'}
+
+        reduce_op_set = {'Sum'}
 
         if self.is_aid_op:
             return 0
@@ -86,6 +101,9 @@ class Operator:
         if self.op_type == 'Conv2D':
             return self._cal_comp_conv2d(tf_opr)
 
+        if self.op_type in reduce_op_set:
+            return self._cal_comp_reduce(tf_opr)
+
         if self.op_type in elementwise_op_set:
             return self._cal_comp_elementwise(tf_opr)
 
@@ -95,7 +113,11 @@ class Operator:
     def _calculate_parallelism(self, tf_opr):
 
         elementwise_op_set = {'Mul', 'Sub', 'Cast', 'ConcatV2', 'BiasAdd',
-                              'Sigmoid', 'Tanh'}
+                              'Sigmoid', 'Tanh', 'Add', 'Min', 'GreaterEqual',
+                              'Max', 'LessEqual', 'Switch', 'LogicalNot',
+                              'Greater', 'Where', 'Gather', 'Transpose',
+                              'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
+                              'Select', 'Relu', 'Equal', 'AssignAdd'}
 
         if self.is_aid_op:
             return 0.0
@@ -105,6 +127,9 @@ class Operator:
 
         if self.op_type == 'Conv2D':
             return self._cal_par_conv2d(tf_opr)
+
+        if self.op_type == 'Sum':
+            return self._cal_par_sum(tf_opr)
 
         if self.op_type in elementwise_op_set:
             return 1.0
@@ -139,11 +164,6 @@ class Operator:
         m, n, k = self._extract_m_n_k()
         comp_ops = 2 * m * n * k
         return comp_ops
-
-    def _cal_par_matmul(self, tf_opr):
-        M, N, K = self._extract_m_n_k()
-        par_ratio = 0.5 + (math.log2(K) / (2 * K))
-        return par_ratio
 
     def _extract_conv2d_params(self, tf_opr):
         conv_args = {}
@@ -183,9 +203,40 @@ class Operator:
 
         return comp_ops
 
+    def _cal_comp_reduce(self, tf_opr):
+        tmp_list = self.input_tensor_shape[0]
+        comp_ops = np.prod(np.array(tmp_list))
+        return comp_ops
+
+    def _cal_par_matmul(self, tf_opr):
+        M, N, K = self._extract_m_n_k()
+        K = max(K, 2.0)
+        par_ratio = 0.5 + (1.0 / (2 * math.ceil(math.log2(K))))
+        return par_ratio
+
     def _cal_par_conv2d(self, tf_opr):
         conv_args = self._extract_conv2d_params(tf_opr)
         K = conv_args['IC'] * conv_args['FH'] * conv_args['FW']
-        par_ratio = 0.5 + (math.log2(K) / (2 * K))
+
+        K = max(K, 2.0)
+        par_ratio = 0.5 + (1.0 / (2 * math.ceil(math.log2(K))))
         return par_ratio
+
+    def _cal_par_sum(self, tf_opr):
+        prod_input = np.prod(np.array(self.input_tensor_shape[0]))
+        prod_output = np.prod(np.array(self.output_tensor_shape[0]))
+        K = prod_input / prod_output
+        assert K >= 1.0
+
+        K = max(K, 2.0)
+        par_ratio = (1.0 / math.ceil(math.log2(K)))
+        return par_ratio
+
+    def _cal_mem_switch(self):
+        tmp_list = self.input_tensor_shape[0]
+        return 2 * np.prod(np.array(tmp_list))
+
+    def _cal_mem_where(self):
+        tmp_list = self.output_tensor_shape[0]
+        return 3 * np.prod(np.array(tmp_list))
 
