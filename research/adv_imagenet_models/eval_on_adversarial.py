@@ -277,7 +277,7 @@ def main(_):
     input_images = get_input_images(dataset_images)
     logits, _ = create_model(input_images, reuse=True)
 
-    if FLAGS.moving_average_decay > 0:
+    if FLAGS.moving_average_decay is not None:
       variable_averages = tf.train.ExponentialMovingAverage(
           FLAGS.moving_average_decay, tf_global_step)
       variables_to_restore = variable_averages.variables_to_restore(
