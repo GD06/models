@@ -39,11 +39,17 @@ import vggish_params
 import vggish_postprocess
 import vggish_slim
 
+import os
+
 print('\nTesting your install of VGGish\n')
 
 # Paths to downloaded VGGish files.
-checkpoint_path = 'vggish_model.ckpt'
-pca_params_path = 'vggish_pca_params.npz'
+if os.getenv('MODEL_INPUT_DIR') is None:
+  checkpoint_path = 'vggish_model.ckpt'
+  pca_params_path = 'vggish_pca_params.npz'
+else:
+  checkpoint_path = os.path.join(os.getenv('MODEL_INPUT_DIR'), 'audioset/vggish_model.ckpt')
+  pca_params_path = os.path.join(os.getenv('MODEL_INPUT_DIR'), 'audioset/vggish_pca_params.npz')
 
 # Relative tolerance of errors in mean and standard deviation of embeddings.
 rel_error = 0.1  # Up to 10%
