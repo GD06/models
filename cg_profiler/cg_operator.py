@@ -61,7 +61,8 @@ class Operator:
                         'Relu', 'Equal', 'AssignAdd', 'Sign', 'FusedBatchNorm',
                         'MaxPool', 'AvgPool', 'ArgMin', 'OneHot', 'Less',
                         'LoopCond', 'NextIteration', 'Minimum', 'Maximum',
-                        'Range', 'ArgMax', 'Exp', 'Log', 'ReduceJoin'}
+                        'Range', 'ArgMax', 'Exp', 'Log', 'ReduceJoin',
+                        'Pack'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits',
                           'Softmax'}
@@ -78,7 +79,8 @@ class Operator:
             return self._cal_mem_fusedbatchnormgrad(tf_opr)
 
         if (self.op_type == 'HashTableV2' or
-                self.op_type == 'LookupTableFindV2'):
+                self.op_type == 'LookupTableFindV2' or
+                self.op_type == 'StridedSlice'):
             return self._cal_mem_tableindex(tf_opr)
 
         if self.op_type in softmax_op_set:
@@ -114,7 +116,8 @@ class Operator:
                               'Select', 'Relu', 'Equal', 'AssignAdd', 'Sign',
                               'OneHot', 'Less', 'LoopCond', 'NextIteration',
                               'Minimum', 'Maximum', 'Range', 'Exp', 'Log',
-                              'HashTableV2', 'LookupTableFindV2'}
+                              'HashTableV2', 'LookupTableFindV2', 'StridedSlice',
+                              'Pack'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'ReduceJoin'}
 
@@ -161,7 +164,7 @@ class Operator:
                               'FusedBatchNorm', 'OneHot', 'Less', 'LoopCond',
                               'NextIteration', 'Minimum', 'Maximum', 'Range',
                               'Exp', 'Log', 'ReduceJoin', 'HashTableV2',
-                              'LookupTableFindV2'}
+                              'LookupTableFindV2', 'StridedSlice', 'Pack'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax'}
 
