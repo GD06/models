@@ -111,7 +111,7 @@ def run_eval(eval_ops, summary_writer, saver):
 
   cg_sorted_shape = sess.run(cg_sorted_items)
   cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                     'adversarial_text')
+                     'adversarial_text.pickle')
   exit(0)
 
   sv = tf.train.Supervisor(logdir=FLAGS.eval_dir, saver=None, summary_op=None)

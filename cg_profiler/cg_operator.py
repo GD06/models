@@ -39,7 +39,9 @@ class Operator:
                       'Reshape', 'StopGradient', 'Shape', 'Barrier',
                       'FIFOQueueV2', 'Assert', 'BarrierTakeMany',
                       'QueueDequeueManyV2', 'Merge', 'BarrierInsertMany',
-                      'NoOp', 'ExpandDims', 'RandomUniformInt'}
+                      'NoOp', 'ExpandDims', 'RandomUniformInt',
+                      'RandomStandardNormal', 'ShapeN'}
+
         if self.op_type in aid_op_set:
             return True
         return False
@@ -51,7 +53,11 @@ class Operator:
                         'Min', 'GreaterEqual', 'Max', 'LessEqual',
                         'LogicalNot', 'Greater', 'Gather', 'Sum', 'Transpose',
                         'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
-                        'Relu', 'Equal', 'AssignAdd'}
+                        'Relu', 'Equal', 'AssignAdd', 'Sign', 'FusedBatchNorm',
+                        'MaxPool', 'AvgPool', 'ArgMin', 'OneHot'}
+
+        softmax_op_set = {'SoftmaxCrossEntropyWithLogits',
+                          'Softmax'}
 
         if self.is_aid_op:
             return 0
@@ -60,6 +66,12 @@ class Operator:
             return self._cal_mem_switch()
         if self.op_type == 'Where':
             return self._cal_mem_where()
+
+        if self.op_type == 'FusedBatchNormGrad':
+            return self._cal_mem_fusedbatchnormgrad(tf_opr)
+
+        if self.op_type in softmax_op_set:
+            return self._cal_mem_softmax()
 
         if self.op_type in known_op_set:
             total_mem_trans = 0
@@ -88,9 +100,15 @@ class Operator:
                               'Max', 'LessEqual', 'Switch', 'LogicalNot',
                               'Greater', 'Where', 'Gather', 'Transpose',
                               'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
-                              'Select', 'Relu', 'Equal', 'AssignAdd'}
+                              'Select', 'Relu', 'Equal', 'AssignAdd', 'Sign',
+                              'OneHot'}
 
-        reduce_op_set = {'Sum'}
+        reduce_op_set = {'Sum', 'ArgMin'}
+
+        pooling_op_set = {'MaxPool', 'AvgPool'}
+
+        softmax_op_set = {'SoftmaxCrossEntropyWithLogits',
+                          'Softmax'}
 
         if self.is_aid_op:
             return 0
@@ -100,6 +118,12 @@ class Operator:
 
         if self.op_type == 'Conv2D':
             return self._cal_comp_conv2d(tf_opr)
+
+        if self.op_type in softmax_op_set:
+            return self._cal_comp_softmax(tf_opr)
+
+        if self.op_type in pooling_op_set:
+            return self._cal_comp_pooling(tf_opr)
 
         if self.op_type in reduce_op_set:
             return self._cal_comp_reduce(tf_opr)
@@ -117,7 +141,15 @@ class Operator:
                               'Max', 'LessEqual', 'Switch', 'LogicalNot',
                               'Greater', 'Where', 'Gather', 'Transpose',
                               'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
-                              'Select', 'Relu', 'Equal', 'AssignAdd'}
+                              'Select', 'Relu', 'Equal', 'AssignAdd', 'Sign',
+                              'FusedBatchNorm', 'OneHot'}
+
+        reduce_op_set = {'Sum', 'ArgMin'}
+
+        pooling_op_set = {'MaxPool', 'AvgPool'}
+
+        softmax_op_set = {'SoftmaxCrossEntropyWithLogits',
+                          'Softmax'}
 
         if self.is_aid_op:
             return 0.0
@@ -128,8 +160,14 @@ class Operator:
         if self.op_type == 'Conv2D':
             return self._cal_par_conv2d(tf_opr)
 
-        if self.op_type == 'Sum':
-            return self._cal_par_sum(tf_opr)
+        if self.op_type in softmax_op_set:
+            return self._cal_par_softmax(tf_opr)
+
+        if self.op_type in reduce_op_set:
+            return self._cal_par_reduce(tf_opr)
+
+        if self.op_type in pooling_op_set:
+            return self._cal_par_pooling(tf_opr)
 
         if self.op_type in elementwise_op_set:
             return 1.0
@@ -208,6 +246,22 @@ class Operator:
         comp_ops = np.prod(np.array(tmp_list))
         return comp_ops
 
+    def _cal_comp_fusedbatchnorm(self, tf_opr):
+        tmp_list = self.output_tensor_shape[0]
+        comp_ops =  5 * np.prod(np.array(tmp_list))
+        return comp_ops
+
+    def _cal_comp_pooling(self, tf_opr):
+        ksize = tf_opr.get_attr('ksize')
+        tmp_list = self.output_tensor_shape[0]
+        comp_ops = np.prod(np.array(tmp_list))
+        comp_ops = comp_ops * np.prod(np.array(ksize))
+        return comp_ops
+
+    def _cal_comp_softmax(self, tf_opr):
+        tmp_list = self.input_tensor_shape[0]
+        return 3 * np.prod(np.array(tmp_list))
+
     def _cal_par_matmul(self, tf_opr):
         M, N, K = self._extract_m_n_k()
         K = max(K, 2.0)
@@ -222,7 +276,7 @@ class Operator:
         par_ratio = 0.5 + (1.0 / (2 * math.ceil(math.log2(K))))
         return par_ratio
 
-    def _cal_par_sum(self, tf_opr):
+    def _cal_par_reduce(self, tf_opr):
         prod_input = np.prod(np.array(self.input_tensor_shape[0]))
         prod_output = np.prod(np.array(self.output_tensor_shape[0]))
         K = prod_input / prod_output
@@ -232,6 +286,17 @@ class Operator:
         par_ratio = (1.0 / math.ceil(math.log2(K)))
         return par_ratio
 
+    def _cal_par_pooling(self, tf_opr):
+        ksize = tf_opr.get_attr('ksize')
+        K = max(np.prod(np.array(ksize)), 2.0)
+        par_ratio = (1.0 / math.ceil(math.log2(K)))
+        return par_ratio
+
+    def _cal_par_softmax(self, tf_opr):
+        K = max(2.0, self.input_tensor_shape[0][1])
+        par_ratio = 2.0 / 3.0 + (1.0 / (3.0 * math.ceil(math.log2(K))))
+        return par_ratio
+
     def _cal_mem_switch(self):
         tmp_list = self.input_tensor_shape[0]
         return 2 * np.prod(np.array(tmp_list))
@@ -239,4 +304,8 @@ class Operator:
     def _cal_mem_where(self):
         tmp_list = self.output_tensor_shape[0]
         return 3 * np.prod(np.array(tmp_list))
+
+    def _cal_mem_softmax(self):
+        tmp_list = self.input_tensor_shape[0]
+        return 2 * np.prod(np.array(tmp_list))
 

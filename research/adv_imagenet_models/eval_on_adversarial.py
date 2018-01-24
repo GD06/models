@@ -26,6 +26,8 @@ import inception_resnet_v2
 import tensorflow as tf
 from tensorflow.contrib.slim.nets import inception
 
+from cg_profiler.cg_graph import CompGraph
+import os
 
 slim = tf.contrib.slim
 
@@ -313,15 +315,50 @@ def main(_):
 
     tf.logging.info('Evaluating %s' % checkpoint_path)
 
-    top1_accuracy, top5_accuracy = slim.evaluation.evaluate_once(
-        master=FLAGS.master,
-        checkpoint_path=checkpoint_path,
-        logdir=None,
-        summary_op=None,
-        num_evals=num_batches,
-        eval_op=list(names_to_updates.values()),
-        final_op=[names_to_values['Accuracy'], names_to_values['Recall_5']],
-        variables_to_restore=variables_to_restore)
+    sess = tf.Session()
+    saver = tf.train.Saver(variables_to_restore)
+    saver.restore(sess, checkpoint_path)
+
+    tf.logging.info('Checkpoint restored')
+
+    tf.train.start_queue_runners(sess=sess)
+
+    init = tf.global_variables_initializer()
+    sess.run(init)
+    init = tf.local_variables_initializer()
+    sess.run(init)
+
+    options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+    run_metadata = tf.RunMetadata()
+
+    tf.logging.info('Start Profiling')
+    eval_results = sess.run(list(names_to_updates.values()),
+                            options=options, run_metadata=run_metadata)
+    cg = CompGraph('adv_imagenet_models', run_metadata, tf.get_default_graph())
+    tf.logging.info('Profiling finished')
+
+    cg_tensor_dict = cg.get_tensors()
+    cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    cg_sorted_items = []
+    for cg_key in cg_sorted_keys:
+      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+    cg_sorted_shape = sess.run(cg_sorted_items)
+    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                   'adv_imagenet_models.pickle')
+
+    top1_accuracy = eval_results[0]
+    top5_accuracy = eval_results[1]
+
+    #top1_accuracy, top5_accuracy = slim.evaluation.evaluate_once(
+    #    master=FLAGS.master,
+    #    checkpoint_path=checkpoint_path,
+    #    logdir=None,
+    #    summary_op=None,
+    #    num_evals=num_batches,
+    #    eval_op=list(names_to_updates.values()),
+    #    final_op=[names_to_values['Accuracy'], names_to_values['Recall_5']],
+    #    variables_to_restore=variables_to_restore)
 
     print('Top1 Accuracy: ', top1_accuracy)
     print('Top5 Accuracy: ', top5_accuracy)
