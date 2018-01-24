@@ -26,6 +26,8 @@ import common_flags
 import datasets
 import data_provider
 
+from cg_profiler.cg_graph import CompGraph
+import os
 FLAGS = flags.FLAGS
 common_flags.define()
 
@@ -77,12 +79,42 @@ def run(checkpoint, batch_size, dataset_name, image_path_pattern):
                                                dataset_name)
   images_data = load_images(image_path_pattern, batch_size,
                             dataset_name)
-  session_creator = monitored_session.ChiefSessionCreator(
-    checkpoint_filename_with_path=checkpoint)
-  with monitored_session.MonitoredSession(
-      session_creator=session_creator) as sess:
-    predictions = sess.run(endpoints.predicted_text,
-                           feed_dict={images_placeholder: images_data})
+  #session_creator = monitored_session.ChiefSessionCreator(
+  #  checkpoint_filename_with_path=checkpoint)
+  #with monitored_session.MonitoredSession(
+  #    session_creator=session_creator) as sess:
+
+  sess = tf.Session()
+  saver = tf.train.Saver()
+  saver.restore(sess, checkpoint)
+
+  sess.run([tf.local_variables_initializer(), tf.global_variables_initializer(),
+            tf.tables_initializer()])
+
+  options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+  run_metadata = tf.RunMetadata()
+
+  print('Start profiling')
+  predictions = sess.run(endpoints.predicted_text,
+             feed_dict={images_placeholder: images_data},
+             options=options, run_metadata=run_metadata)
+  cg = CompGraph('attention_ocr', run_metadata, tf.get_default_graph())
+  print('Profiling finished')
+
+  cg_tensor_dict = cg.get_tensors()
+  cg_sorted_keys = sorted(cg_tensor_dict.keys())
+  cg_sorted_items = []
+  for cg_key in cg_sorted_keys:
+    cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+  cg_sorted_shape = sess.run(cg_sorted_items,
+                             feed_dict={images_placeholder: images_data},
+                             options=options, run_metadata=run_metadata)
+  cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                 'attention_ocr.pickle')
+
+  exit(0)
+
   return predictions.tolist()
 
 

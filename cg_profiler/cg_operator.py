@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import math
+import re
 
 class Operator:
 
@@ -40,7 +41,11 @@ class Operator:
                       'FIFOQueueV2', 'Assert', 'BarrierTakeMany',
                       'QueueDequeueManyV2', 'Merge', 'BarrierInsertMany',
                       'NoOp', 'ExpandDims', 'RandomUniformInt',
-                      'RandomStandardNormal', 'ShapeN'}
+                      'RandomStandardNormal', 'ShapeN', 'Enter', 'Exit'}
+
+        tensor_array_matcher = re.compile('TensorArray')
+        if tensor_array_matcher.match(self.op_type) is not None:
+            return True
 
         if self.op_type in aid_op_set:
             return True
@@ -54,7 +59,9 @@ class Operator:
                         'LogicalNot', 'Greater', 'Gather', 'Sum', 'Transpose',
                         'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
                         'Relu', 'Equal', 'AssignAdd', 'Sign', 'FusedBatchNorm',
-                        'MaxPool', 'AvgPool', 'ArgMin', 'OneHot'}
+                        'MaxPool', 'AvgPool', 'ArgMin', 'OneHot', 'Less',
+                        'LoopCond', 'NextIteration', 'Minimum', 'Maximum',
+                        'Range', 'ArgMax', 'Exp', 'Log', 'ReduceJoin'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits',
                           'Softmax'}
@@ -69,6 +76,10 @@ class Operator:
 
         if self.op_type == 'FusedBatchNormGrad':
             return self._cal_mem_fusedbatchnormgrad(tf_opr)
+
+        if (self.op_type == 'HashTableV2' or
+                self.op_type == 'LookupTableFindV2'):
+            return self._cal_mem_tableindex(tf_opr)
 
         if self.op_type in softmax_op_set:
             return self._cal_mem_softmax()
@@ -101,9 +112,11 @@ class Operator:
                               'Greater', 'Where', 'Gather', 'Transpose',
                               'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
                               'Select', 'Relu', 'Equal', 'AssignAdd', 'Sign',
-                              'OneHot'}
+                              'OneHot', 'Less', 'LoopCond', 'NextIteration',
+                              'Minimum', 'Maximum', 'Range', 'Exp', 'Log',
+                              'HashTableV2', 'LookupTableFindV2'}
 
-        reduce_op_set = {'Sum', 'ArgMin'}
+        reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'ReduceJoin'}
 
         pooling_op_set = {'MaxPool', 'AvgPool'}
 
@@ -118,6 +131,9 @@ class Operator:
 
         if self.op_type == 'Conv2D':
             return self._cal_comp_conv2d(tf_opr)
+
+        if self.op_type == 'FusedBatchNorm':
+            return self._cal_comp_fusedbatchnorm(tf_opr)
 
         if self.op_type in softmax_op_set:
             return self._cal_comp_softmax(tf_opr)
@@ -142,9 +158,12 @@ class Operator:
                               'Greater', 'Where', 'Gather', 'Transpose',
                               'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
                               'Select', 'Relu', 'Equal', 'AssignAdd', 'Sign',
-                              'FusedBatchNorm', 'OneHot'}
+                              'FusedBatchNorm', 'OneHot', 'Less', 'LoopCond',
+                              'NextIteration', 'Minimum', 'Maximum', 'Range',
+                              'Exp', 'Log', 'ReduceJoin', 'HashTableV2',
+                              'LookupTableFindV2'}
 
-        reduce_op_set = {'Sum', 'ArgMin'}
+        reduce_op_set = {'Sum', 'ArgMin', 'ArgMax'}
 
         pooling_op_set = {'MaxPool', 'AvgPool'}
 
@@ -307,5 +326,9 @@ class Operator:
 
     def _cal_mem_softmax(self):
         tmp_list = self.input_tensor_shape[0]
+        return 2 * np.prod(np.array(tmp_list))
+
+    def _cal_mem_tableindex(self, tf_opr):
+        tmp_list = self.output_tensor_shape[0]
         return 2 * np.prod(np.array(tmp_list))
 
