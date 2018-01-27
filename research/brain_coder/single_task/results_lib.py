@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 """Results object manages distributed reading and writing of results to disk."""
 
@@ -117,7 +117,7 @@ class Results(object):
     except tf.errors.NotFoundError:
       if num_shards is None:
         return [], None
-      return [], [[] for _ in xrange(num_shards)]
+      return [], [[] for _ in range(num_shards)]
     shard_ids = {
         get_shard_id(fname): fname
         for fname in all_children if re.search(self.search_regex, fname)}
@@ -125,12 +125,12 @@ class Results(object):
     if num_shards is None:
       aggregate = []
       shard_stats = None
-      for results_file in shard_ids.values():
+      for results_file in list(shard_ids.values()):
         aggregate.extend(self._read_shard(
             os.path.join(self.log_dir, results_file)))
     else:
       results_per_shard = [None] * num_shards
-      for shard_id in xrange(num_shards):
+      for shard_id in range(num_shards):
         if shard_id in shard_ids:
           results_file = shard_ids[shard_id]
           results_per_shard[shard_id] = self._read_shard(

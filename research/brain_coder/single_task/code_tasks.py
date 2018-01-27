@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 """Tasks for RL."""
 
@@ -250,12 +250,11 @@ def conditional_overwrite(current_value, new_value, allowed_overwrite_values):
   return current_value
 
 
-class BaseTask(object):
+class BaseTask(object, metaclass=abc.ABCMeta):
   """A coding task.
 
   All coding tasks should inherit this class.
   """
-  __metaclass__ = abc.ABCMeta
 
   def __init__(self, base=256):
     self.base = base  # All tasks must set the integer base that the expect.
@@ -348,10 +347,10 @@ class RemoveCharTask(BaseTask):
     """Generate test cases for the task."""
     rand = random.Random(6849275409234)  # Test cases are fixed, but varied.
     io_examples = []
-    for _ in xrange(n):
+    for _ in range(n):
       length = rand.randrange(min_len, max_len + 1)
       rm_char_pos = rand.randrange(0, length)
-      input_seq = [rand.randrange(1, self.base) for _ in xrange(length)]
+      input_seq = [rand.randrange(1, self.base) for _ in range(length)]
       input_seq[rm_char_pos] = self.remove_char
       output_seq = list(input_seq)
       del output_seq[rm_char_pos]
@@ -401,16 +400,16 @@ class ReverseTaskV2(BaseTask):
       o.reverse()
       o.append(0)
     inputs = [i + [0] for i in sequences]
-    return zip(inputs, outputs)
+    return list(zip(inputs, outputs))
 
   def _io_rand(self, k):
     inputs = [(np.random.choice(26, random.randrange(1, 6)) + 1).tolist()
-              for _ in xrange(k)]
+              for _ in range(k)]
     return self._make_io_examples(inputs)
 
   def _io_rand_by_len(self, k=5):
     inputs = [(np.random.choice(26, length) + 1).tolist()
-              for length in xrange(1, k + 1)]
+              for length in range(1, k + 1)]
     return self._make_io_examples(inputs)
 
   def _io_static_by_len(self):
@@ -445,9 +444,9 @@ class ReverseTask(BaseTask):
     """Generate test cases for the task."""
     rand = random.Random(6849275409234)  # Test cases are fixed, but varied.
     io_examples = []
-    for _ in xrange(n):
+    for _ in range(n):
       length = rand.randrange(min_len, max_len + 1)
-      input_seq = [rand.randrange(1, self.base) for _ in xrange(length)]
+      input_seq = [rand.randrange(1, self.base) for _ in range(length)]
       output_seq = list(input_seq)
       output_seq.reverse()
       output_seq.append(0)
@@ -529,7 +528,7 @@ class CountCharTaskV2(BaseTask):
     self.base = 27
     self.eos = 0
     self.char = 1
-    self.other_chars = [c for c in xrange(self.base)
+    self.other_chars = [c for c in range(self.base)
                         if c not in (self.eos, self.char)]
     self.input_type = misc.IOType.string
     self.output_type = misc.IOType.integer
@@ -544,12 +543,12 @@ class CountCharTaskV2(BaseTask):
     io_examples.append(([1, 1, 0], [2]))
     io_examples.append(([9, 4, 19, 11, 5, 0], [0]))
     io_examples.append(([24, 11, 26, 1, 15, 0], [1]))
-    for _ in xrange(n - 5):
+    for _ in range(n - 5):
       length = rand.randrange(2, max_len + 1)
       num_chars = rand.randrange(0, max_len + 1)
       input_seq = [self.char] * num_chars + [0] * (length - num_chars)
       rand.shuffle(input_seq)
-      for i in xrange(len(input_seq)):
+      for i in range(len(input_seq)):
         if not input_seq[i]:
           input_seq[i] = self.other_chars[rand.randrange(len(self.other_chars))]
       output_seq = [num_chars]
@@ -588,7 +587,7 @@ class AddTask(BaseTask):
         ([130, 127], [1, 0]),
         ([255, 1], [0, 0])]
     extra_examples = max(n - len(io_examples), 0)
-    for _ in xrange(extra_examples):
+    for _ in range(extra_examples):
       a = rand.randrange(256)
       b = rand.randrange(256)
       input_seq = [a, b]
@@ -618,7 +617,7 @@ class BooleanLogicTask(BaseTask):
         (x and not z) or (not y and not z) or (not x and y and z))
     self._test_cases = [
         ([x, y, z], [int(self._truth_fn(x, y, z))])
-        for x, y, z in itertools.product(range(2), range(2), range(2))]
+        for x, y, z in itertools.product(list(range(2)), list(range(2)), list(range(2)))]
 
   def make_io_set(self):
     return copy.deepcopy(self._test_cases)
@@ -634,7 +633,7 @@ class BooleanLogicTask(BaseTask):
 def default_input_fn_factory(min_length=1, max_length=6, base=256):
   def _input_gen(rand):
     l = rand.randrange(min_length, max_length + 1)
-    return [rand.randrange(base) for _ in xrange(l)]
+    return [rand.randrange(base) for _ in range(l)]
   return _input_gen
 
 
@@ -661,7 +660,7 @@ class KnownCodeBaseTask(BaseTask):
 
   def _test_case_generator(self, code_solution):
     rand = random.Random(self.seed)
-    for _ in xrange(self.n):
+    for _ in range(self.n):
       input_case = self.make_input_fn(rand)
       result = bf.evaluate(
           code_solution, input_buffer=input_case, max_steps=self.max_steps,
@@ -835,9 +834,9 @@ class EchoSecondSequenceTask(KnownCodeBaseTask):
   def __init__(self, **kwargs):
     def echo_second_gen(rand):
       l = rand.randrange(1, 6)
-      x = [rand.randrange(256) for _ in xrange(l)]
+      x = [rand.randrange(256) for _ in range(l)]
       l = rand.randrange(1, 6)
-      y = [rand.randrange(256) for _ in xrange(l)]
+      y = [rand.randrange(256) for _ in range(l)]
       return x + [0] + y + [0]
     super(type(self), self).__init__(
         ',[,],[.,].',
@@ -853,9 +852,9 @@ class EchoNthSequenceTask(KnownCodeBaseTask):
       k = rand.randrange(1, 7)
       n = rand.randrange(1, k + 1)
       x = []
-      for _ in xrange(k):
+      for _ in range(k):
         l = rand.randrange(0, 4)
-        x += [rand.randrange(256) for _ in xrange(l)] + [0]
+        x += [rand.randrange(256) for _ in range(l)] + [0]
       return [n] + x
     super(type(self), self).__init__(
         ',-[->,[,]<],[.,].',
@@ -875,7 +874,7 @@ class SubstringTask(KnownCodeBaseTask):
       l = rand.randrange(2, 16)
       i, j = sorted([rand.randrange(l), rand.randrange(l)])
       n = j - i
-      x = [rand.randrange(256) for _ in xrange(l)] + [0]
+      x = [rand.randrange(256) for _ in range(l)] + [0]
       return [i, n] + x
     super(type(self), self).__init__(
         '>,<,>[->,<]>,<<[->>.,<<]',
@@ -903,7 +902,7 @@ class DedupTask(KnownCodeBaseTask):
       np_random = np.random.RandomState(rand.randrange(2147483647))
       num_unique = rand.randrange(1, 5)
       unique = np_random.choice(6, num_unique, replace=False) + 1
-      return [v for v in unique for _ in xrange(rand.randrange(1, 5))] + [0]
+      return [v for v in unique for _ in range(rand.randrange(1, 5))] + [0]
     super(type(self), self).__init__(
         '>>,.[[-<+<+>>],[-<->]<[[-<->]<.>]<[->>+<<]>>]',
         dedup_input_gen,
@@ -952,7 +951,7 @@ class EchoTask(BaseTask):
     # Test cases are fixed, but varied.
     np_random = np.random.RandomState(1234567890)
     io_pairs = []
-    for _ in xrange(n):
+    for _ in range(n):
       length = np_random.randint(self.min_length, self.max_length + 1)
       input_seq = np_random.randint(1, self.base, length).tolist() + [self.eos]
       output_seq = list(input_seq)
@@ -1007,7 +1006,7 @@ class JudgeRouteCircleTask(BaseTask):
     io_examples.append(([2, 0], [0]))
     io_examples.append(([3, 0], [0]))
     io_examples.append(([4, 0], [0]))
-    for _ in xrange(n):
+    for _ in range(n):
       is_true = rand.randrange(2)
       length = rand.randrange(1, max_len + 1)
       if is_true:
@@ -1037,7 +1036,7 @@ class JudgeRouteCircleTask(BaseTask):
           counts[b] -= 1
           assert counts[a] <= length and counts[b] >= 0
       assert sum(counts.values()) == length
-      input_seq = [n for n in xrange(1, 5) for _ in xrange(counts[n])]
+      input_seq = [n for n in range(1, 5) for _ in range(counts[n])]
       rand.shuffle(input_seq)
       input_seq += [0]
       output_seq = self._solve(input_seq)
@@ -1076,7 +1075,7 @@ class MultiplyTask(BaseTask):
     """Generate test cases for the task."""
     rand = random.Random(6849275409234)  # Test cases are fixed, but varied.
     io_examples = []
-    for _ in xrange(n):
+    for _ in range(n):
       n = rand.randrange(self.base)
       if n == 0:
         a, b = 0, rand.randrange(self.base)
@@ -1117,7 +1116,7 @@ class DivModTask(BaseTask):
   def _make_io_examples(self, n):
     rand = random.Random(6849275409234)  # Test cases are fixed, but varied.
     io_examples = []
-    for _ in xrange(n):
+    for _ in range(n):
       n = rand.randrange(0, self.base)
       k = rand.randrange(1, self.base)  # Divisor cannot be 0.
       io_examples.append(([n, k], list(divmod(n, k))))
@@ -1235,8 +1234,8 @@ class SortFixedTaskV2(BaseTask):
   def _make_io_examples(self, n, length):
     rand = random.Random(6849275409234)  # Test cases are fixed, but varied.
     io_examples = []
-    for _ in xrange(n):
-      input_seq = [rand.randrange(1, self.base) for _ in xrange(length)]
+    for _ in range(n):
+      input_seq = [rand.randrange(1, self.base) for _ in range(length)]
       output_seq = sorted(input_seq)
       io_examples.append((input_seq, output_seq))
     return io_examples
@@ -1260,8 +1259,8 @@ class RemoveTargetCharTask(KnownCodeBaseTask):
     def remove_target_char_gen(rand):
       char = rand.randrange(1, 6)
       l = rand.randrange(1, 8)
-      input_seq = [randrange_hole(rand, 1, char, 256) for _ in xrange(l)]
-      idx = range(l)
+      input_seq = [randrange_hole(rand, 1, char, 256) for _ in range(l)]
+      idx = list(range(l))
       rand.shuffle(idx)
       num_targets = rand.randrange(0, l)
       for pos in idx[:num_targets]:
@@ -1280,7 +1279,7 @@ class ListIndexTask(KnownCodeBaseTask):
     def array_index_gen(rand):
       l = rand.randrange(1, 16)
       i = rand.randrange(l)
-      return [i] + [rand.randrange(256) for _ in xrange(l)] + [0]
+      return [i] + [rand.randrange(256) for _ in range(l)] + [0]
     super(type(self), self).__init__(
         ',[->,<]>,.',
         array_index_gen,

@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 """Tests for results_lib."""
 
@@ -46,7 +46,7 @@ def temporary_directory(suffix='', prefix='tmp', base_path=None):
 
 def freeze(dictionary):
   """Convert dict to hashable frozenset."""
-  return frozenset(dictionary.iteritems())
+  return frozenset(iter(dictionary.items()))
 
 
 class ResultsLibTest(tf.test.TestCase):
@@ -68,7 +68,7 @@ class ResultsLibTest(tf.test.TestCase):
     with temporary_directory() as logdir:
       n = 4  # Number of shards.
       results_objs = [
-          results_lib.Results(logdir, shard_id=i) for i in xrange(n)]
+          results_lib.Results(logdir, shard_id=i) for i in range(n)]
       for i, robj in enumerate(results_objs):
         robj.append({'foo': i, 'bar': 1 + i * 2})
       results_list, _ = results_objs[0].read_all()
@@ -76,7 +76,7 @@ class ResultsLibTest(tf.test.TestCase):
       # Check results. Order does not matter here.
       self.assertEqual(
           set(freeze(r) for r in results_list),
-          set(freeze({'foo': i, 'bar': 1 + i * 2}) for i in xrange(n)))
+          set(freeze({'foo': i, 'bar': 1 + i * 2}) for i in range(n)))
 
 
 if __name__ == '__main__':

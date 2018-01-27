@@ -13,13 +13,15 @@
 # limitations under the License.
 # ==============================================================================
 
+cd ${DATA_INPUT_DIR}/cognitive_mapping_and_planning
+
 mkdir -p data/stanford_building_parser_dataset
 mkdir -p data/stanford_building_parser_dataset/mesh
 cd data/stanford_building_parser_dataset_raw
 
 # Untar the files and extract the meshes.
-for t in "1" "3" "4" "5a" "5b" "6"; do
-  tar -xf area_"$t"_noXYZ.tar area_$t/3d/rgb_textures
+for t in "4"; do
+  tar -xf area_"$t"_no_xyz.tar area_$t/3d/rgb_textures
   mv area_$t/3d/rgb_textures ../stanford_building_parser_dataset/mesh/area$t
   rmdir area_$t/3d
   rmdir area_$t
@@ -29,9 +31,11 @@ cd ../../
 
 # Preprocess meshes to remove the group and chunk information.
 cd data/stanford_building_parser_dataset/
-for t in "1" "3" "4" "5a" "5b" "6"; do
+for t in "4"; do
   obj_name=`ls mesh/area$t/*.obj`
   cp $obj_name "$obj_name".bck
   cat $obj_name.bck | grep -v '^g' | grep -v '^o' > $obj_name
 done
 cd ../../
+
+cd ${TF_MODEL_DIR}/research/cognitive_mapping_and_planning

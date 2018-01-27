@@ -1,12 +1,12 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 """Configuration class."""
 
 import bisect
 from collections import deque
-import cPickle
+import pickle
 import heapq
 import random
 
@@ -16,7 +16,7 @@ import tensorflow as tf
 
 
 def tuple_to_record(tuple_, record_type):
-  return record_type(**dict(zip(record_type.__slots__, tuple_)))
+  return record_type(**dict(list(zip(record_type.__slots__, tuple_))))
 
 
 def make_record(type_name, attributes, defaults=None):
@@ -67,11 +67,11 @@ def make_record(type_name, attributes, defaults=None):
       if len(args) > len(self.__slots__):
         raise ValueError('Too many arguments. %s has length %d.'
                          % (type(self).__name__, len(self.__slots__)))
-      for attr, val in self._defaults.items():
+      for attr, val in list(self._defaults.items()):
         setattr(self, attr, val)
       for i, arg in enumerate(args):
         setattr(self, self.__slots__[i], arg)
-      for attr, val in kwargs.items():
+      for attr, val in list(kwargs.items()):
         setattr(self, attr, val)
       for attr in self.__slots__:
         if not hasattr(self, attr):
@@ -137,7 +137,7 @@ def stack_pad(tensors, pad_axes=None, pad_to_lengths=None, dtype=np.float32,
   same_axes = dict(enumerate(max_lengths))
   if pad_axes is None:
     pad_axes = []
-  if isinstance(pad_axes, (int, long)):
+  if isinstance(pad_axes, int):
     if pad_to_lengths is not None:
       max_lengths[pad_axes] = pad_to_lengths
     del same_axes[pad_axes]
@@ -148,7 +148,7 @@ def stack_pad(tensors, pad_axes=None, pad_to_lengths=None, dtype=np.float32,
       if l is not None:
         max_lengths[i] = l
       del same_axes[i]
-  same_axes_items = same_axes.items()
+  same_axes_items = list(same_axes.items())
   dest = np.full([len(tensors)] + max_lengths, pad_value, dtype=dtype)
   for i, t in enumerate(tensors):
     for j, l in same_axes_items:
@@ -381,7 +381,7 @@ class RouletteWheel(object):
         count = 0
         while 1:
           try:
-            obj, weight, key = cPickle.load(f)
+            obj, weight, key = pickle.load(f)
           except EOFError:
             break
           else:
@@ -525,7 +525,7 @@ class RouletteWheel(object):
     """Spin the roulette wheel `count` times and return the results."""
     if self.is_empty():
       raise RuntimeError('Trying to sample from empty roulette wheel.')
-    return [self.sample() for _ in xrange(count)]
+    return [self.sample() for _ in range(count)]
 
   def incremental_save(self, log_info=False):
     """Write new entries to disk.
@@ -551,6 +551,6 @@ class RouletteWheel(object):
                    len(self.save_to_disk_buffer))
     with tf.gfile.OpenFast(self.save_file, 'a') as f:
       for entry in self.save_to_disk_buffer:
-        cPickle.dump(entry, f)
+        pickle.dump(entry, f)
     # Clear the buffer.
     self.save_to_disk_buffer = []

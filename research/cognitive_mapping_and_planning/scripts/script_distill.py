@@ -90,7 +90,7 @@ def main(_):
         img = inputs['imgs'][j,0,:,:,:3]*1
         img = (img).astype(np.uint8)
         fu.write_image(p, img)
-      print(inputs['imgs'].shape)
+      print((inputs['imgs'].shape))
       inputs = R.pre(inputs)
     pr.disable()
     pr.print_stats(2)

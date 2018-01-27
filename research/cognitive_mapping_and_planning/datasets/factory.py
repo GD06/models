@@ -24,7 +24,7 @@ import logging
 from tensorflow.python.platform import app
 from tensorflow.python.platform import flags
 
-import render.swiftshader_renderer as renderer 
+import render.swiftshader_renderer as renderer
 import src.file_utils as fu
 import src.utils as utils
 
@@ -71,7 +71,7 @@ class Loader():
     mesh_file_name = glob.glob1(dir_name, '*.obj')[0]
     mesh_file_name_full = os.path.join(dir_name, mesh_file_name)
     logging.error('Loading building from obj file: %s', mesh_file_name_full)
-    shape = renderer.Shape(mesh_file_name_full, load_materials=True, 
+    shape = renderer.Shape(mesh_file_name_full, load_materials=True,
                            name_prefix=building['name']+'_')
     return [shape]
 
@@ -79,10 +79,15 @@ class StanfordBuildingParserDataset(Loader):
   def __init__(self, ver):
     self.ver = ver
     self.data_dir = None
-  
+
   def get_data_dir(self):
     if self.data_dir is None:
-      self.data_dir = 'data/stanford_building_parser_dataset/'
+      if os.getenv('DATA_INPUT_DIR') is not None:
+        self.data_dir = os.path.join(os.getenv('DATA_INPUT_DIR'),
+                                    'cognitive_mapping_and_planning',
+                                    'data/stanford_building_parser_dataset/')
+      else:
+        self.data_dir = 'data/stanford_building_parser_dataset/'
     return self.data_dir
 
   def get_benchmark_sets(self):

@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 r"""This script crawls experiment directories for results and aggregates them.
 
@@ -20,7 +20,7 @@ from collections import namedtuple
 import csv
 import os
 import re
-import StringIO
+import io
 import sys
 
 from absl import app
@@ -68,7 +68,7 @@ flags.DEFINE_enum(
 
 def make_csv_string(table):
   """Convert 2D list to CSV string."""
-  s = StringIO.StringIO()
+  s = io.StringIO()
   writer = csv.writer(s)
   writer.writerows(table)
   value = s.getvalue()

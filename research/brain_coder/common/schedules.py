@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 """Schedule functions for controlling hparams over time."""
 
@@ -11,7 +11,7 @@ import math
 from common import config_lib  # brain coder
 
 
-class Schedule(object):
+class Schedule(object, metaclass=ABCMeta):
   """Schedule is a function which sets a hyperparameter's value over time.
 
   For example, a schedule can be used to decay an hparams, or oscillate it over
@@ -35,7 +35,6 @@ class Schedule(object):
      replica training will behave the same.
   4) Duplicate successive calls on the same time are allowed.
   """
-  __metaclass__ = ABCMeta
 
   @abstractmethod
   def __init__(self, config):

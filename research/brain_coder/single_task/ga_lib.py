@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 """Genetic algorithm for BF tasks.
 
@@ -242,7 +242,7 @@ def mutate_and_crossover(population, mutation_rate, crossover_rate):
     Child population. A list of Individual objects.
   """
   children = [None] * len(population)
-  for i in xrange(0, _make_even(len(population)), 2):
+  for i in range(0, _make_even(len(population)), 2):
     p1 = population[i]
     p2 = population[i + 1]
     if random.random() < crossover_rate:
@@ -416,7 +416,7 @@ def roulette_selection(population, k):
 
   sum_fits = fitnesses.sum()
   chosen = [None] * k
-  for i in xrange(k):
+  for i in range(k):
     u = random.random() * sum_fits
     sum_ = 0
     for ind, fitness in zip(population, fitnesses):
@@ -431,7 +431,7 @@ def roulette_selection(population, k):
 
 
 def make_population(make_individual_fn, n):
-  return [make_individual_fn() for _ in xrange(n)]
+  return [make_individual_fn() for _ in range(n)]
 
 
 def best(population):

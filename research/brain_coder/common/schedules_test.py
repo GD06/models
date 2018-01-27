@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 """Tests for common.schedules."""
 
@@ -30,7 +30,7 @@ class SchedulesTest(tf.test.TestCase):
     self.assertTrue(isinstance(f, schedule_subtype))
 
     # Check that multiple instances returned from make_schedule behave the same.
-    fns = [schedules.make_schedule(config) for _ in xrange(3)]
+    fns = [schedules.make_schedule(config) for _ in range(3)]
 
     # Check that all the inputs map to the right outputs.
     for i, o in io_values:
@@ -42,7 +42,7 @@ class SchedulesTest(tf.test.TestCase):
 
     # Check that a subset of the io_values are still correct.
     f = schedules.make_schedule(config)
-    subseq = [io_values[i**2] for i in xrange(int(sqrt(len(io_values))))]
+    subseq = [io_values[i**2] for i in range(int(sqrt(len(io_values))))]
     if subseq[-1] != io_values[-1]:
       subseq.append(io_values[-1])
     for i, o in subseq:
@@ -54,7 +54,7 @@ class SchedulesTest(tf.test.TestCase):
     # Check duplicate calls.
     f = schedules.make_schedule(config)
     for i, o in io_values:
-      for _ in xrange(3):
+      for _ in range(3):
         f_out = f(i)
         self.assertTrue(
             np.isclose(o, f_out),

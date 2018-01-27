@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 """Tests for pg_agent."""
 
@@ -121,7 +121,7 @@ class AgentTest(tf.test.TestCase):
         self.assertTrue(np.array_equal(g, l))
 
       # Make all gradients dense tensors.
-      for param, grad in model.gradients_dict.items():
+      for param, grad in list(model.gradients_dict.items()):
         if isinstance(grad, tf.IndexedSlices):
           # Converts to dense tensor.
           model.gradients_dict[param] = tf.multiply(grad, 1.0)
@@ -131,7 +131,7 @@ class AgentTest(tf.test.TestCase):
           sess, trainer.data_manager.sample_rl_batch(), trainer.train_op,
           trainer.global_step, return_gradients=True)
       grads_dict = results.gradients_dict
-      for grad in grads_dict.values():
+      for grad in list(grads_dict.values()):
         self.assertIsNotNone(grad)
         self.assertTrue(np.count_nonzero(grad) > 0)
       global_update = sess.run(trainer.global_model.trainable_variables)
@@ -170,7 +170,7 @@ class AgentTest(tf.test.TestCase):
     def sequence_iterator(max_length):
       """Iterates through all sequences up to the given length."""
       yield [eos]
-      for a in xrange(1, num_tokens):
+      for a in range(1, num_tokens):
         if max_length > 1:
           for sub_seq in sequence_iterator(max_length - 1):
             yield [a] + sub_seq
@@ -216,7 +216,7 @@ class AgentTest(tf.test.TestCase):
       exact_grads = [np.zeros(v.shape) for v in model.trainable_variables]
       episode_probs_map = {}
       grads_map = {}
-      for a_idx in xrange(len(actions_batch)):
+      for a_idx in range(len(actions_batch)):
         a = actions_batch[a_idx]
         grads_result, probs_result, loss = sess.run(
             [model.dense_unclipped_grads, model.chosen_probs, model.loss],
@@ -274,7 +274,7 @@ class AgentTest(tf.test.TestCase):
 
     # Make sure MC estimates of true probs are close.
     counter = Counter(tuple(e) for e in sampled_actions)
-    for acs, count in counter.iteritems():
+    for acs, count in counter.items():
       mc_prob = count / float(len(sampled_actions))
       true_prob = episode_probs_map[acs]
       error = smape(mc_prob, true_prob)
@@ -359,7 +359,7 @@ class AgentTest(tf.test.TestCase):
       sess.run(global_init_op)  # Initialize global copy.
       trainer.initialize(sess)
 
-      actions_raw = [random_sequence(10, 9) for _ in xrange(16)]
+      actions_raw = [random_sequence(10, 9) for _ in range(16)]
       actions_batch = utils.stack_pad(actions_raw, 0)
       lengths_batch = [len(l) for l in actions_raw]
       feed = {actions_ph: actions_batch,
@@ -370,7 +370,7 @@ class AgentTest(tf.test.TestCase):
       for i, param in enumerate(model.trainable_variables):
         param_size = np.prod(param_shapes[i])
         estimated_grads[i] = np.zeros(param_size, dtype=np.float64)
-        for index in xrange(param_size):
+        for index in range(param_size):
           e = onehot(index, param_size) * epsilon
           sess.run(assign_add_ops[i],
                    {assign_add_placeholders[i]: e})

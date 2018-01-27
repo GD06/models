@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 """Objects for storing configuration and passing config into binaries.
 
@@ -29,7 +29,7 @@ class Config(dict):
                         else v.pretty_str(new_lines=new_lines,
                                           indent=indent+2,
                                           final_indent=indent)))
-          for k, v in self.items()]
+          for k, v in list(self.items())]
     if new_lines:
       return 'Config(\n%s\n%s)' % (',\n'.join(kv), final_prefix)
     else:
@@ -57,9 +57,9 @@ class Config(dict):
                       % len(args))
     obj = args[0] if args else dict()
     if isinstance(obj, dict):
-      return itertools.chain(obj.items(), kwargs.items())
+      return itertools.chain(list(obj.items()), list(kwargs.items()))
     # Assume obj is an iterable of 2-tuples.
-    return itertools.chain(obj, kwargs.items())
+    return itertools.chain(obj, list(kwargs.items()))
 
   def make_default(self, keys=None):
     """Convert OneOf objects into their default configs.
@@ -71,7 +71,7 @@ class Config(dict):
           used.
     """
     if keys is None:
-      keys = self.keys()
+      keys = list(self.keys())
     for k in keys:
       # Replace OneOf with its default value.
       if isinstance(self[k], OneOf):
@@ -152,7 +152,7 @@ class Config(dict):
     assert isinstance(parsed, dict)
 
     def _make_config(dictionary):
-      for k, v in dictionary.items():
+      for k, v in list(dictionary.items()):
         if isinstance(v, dict):
           dictionary[k] = _make_config(v)
       return Config(**dictionary)
@@ -228,7 +228,7 @@ class OneOf(object):
           'Incorrect usage. Must give exactly one named argument. The argument '
           'name is the config attribute to condition on, and the argument '
           'value is the default choice. Got %d named arguments.' % len(kwargs))
-    key, default_value = kwargs.items()[0]
+    key, default_value = list(kwargs.items())[0]
     self.key = key
     self.default_value = default_value
 
@@ -250,7 +250,7 @@ class OneOf(object):
     if self.default_value not in self.value_map:
       raise ValueError(
           'Default value is not an available choice. Got %s=%s. Choices are %s.'
-          % (key, self.default_value, self.value_map.keys()))
+          % (key, self.default_value, list(self.value_map.keys())))
 
   def default(self):
     return self.default_config
@@ -305,7 +305,7 @@ class OneOf(object):
     if config[self.key] not in self.value_map:
       raise ValueError(
           'Value %s for key %s is not a possible choice. Choices are %s.'
-          % (config[self.key], self.key, self.value_map.keys()))
+          % (config[self.key], self.key, list(self.value_map.keys())))
     target = self.value_map[config[self.key]]
     target.strict_update(config)
     return target
@@ -314,7 +314,7 @@ class OneOf(object):
 def _next_comma(string, start_index):
   """Finds the position of the next comma not used in a literal collection."""
   paren_count = 0
-  for i in xrange(start_index, len(string)):
+  for i in range(start_index, len(string)):
     c = string[i]
     if c == '(' or c == '[' or c == '{':
       paren_count += 1

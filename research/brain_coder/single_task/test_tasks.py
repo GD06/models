@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 """Tasks that test correctness of algorithms."""
 
@@ -68,7 +68,7 @@ class Trie(object):
         d = d[e]
       else:
         raise ValueError('Sequence not a prefix: %s' % (sequence,))
-    return d.keys()
+    return list(d.keys())
 
 
 class HillClimbingTask(object):
@@ -109,7 +109,7 @@ class HillClimbingTask(object):
   def __call__(self, actions):
     # Compute reward for action sequence.
     actions = [a for a in actions if a > 0]
-    sequence = [tuple(actions[i: i + 3]) for i in xrange(0, len(actions), 3)]
+    sequence = [tuple(actions[i: i + 3]) for i in range(0, len(actions), 3)]
     prefix, complete = self.paths.prefix_match(sequence)
     if complete:
       return float(len(prefix)), actions == self.correct_sequence

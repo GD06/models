@@ -13,12 +13,14 @@
 # limitations under the License.
 # ==============================================================================
 
-cd data/stanford_building_parser_dataset_raw
-unzip Stanford3dDataset_v1.2.zip
-cd ../../
-PYOPENGL_PLATFORM=egl PYTHONPATH='.' python scripts/script_preprocess_annoations_S3DIS.py
+cd ${DATA_INPUT_DIR}/cognitive_mapping_and_planning/data/stanford_building_parser_dataset_raw
+#unzip Stanford3dDataset_v1.2.zip
+cd ${TF_MODEL_DIR}/research/cognitive_mapping_and_planning
+PYOPENGL_PLATFORM=egl python3 scripts/script_preprocess_annoations_S3DIS.py
 
-mv data/stanford_building_parser_dataset_raw/processing/room-dimension data/stanford_building_parser_dataset/.
-mv data/stanford_building_parser_dataset_raw/processing/class-maps data/stanford_building_parser_dataset/.
+cp -r ${DATA_INPUT_DIR}/cognitive_mapping_and_planning/data/stanford_building_parser_dataset_raw/processing/room-dimension \
+     ${DATA_INPUT_DIR}/cognitive_mapping_and_planning/data/stanford_building_parser_dataset/
+cp -r ${DATA_INPUT_DIR}/cognitive_mapping_and_planning/data/stanford_building_parser_dataset_raw/processing/class-maps \
+    ${DATA_INPUT_DIR}/cognitive_mapping_and_planning/data/stanford_building_parser_dataset/
 
 echo "You may now delete data/stanford_building_parser_dataset_raw if needed."

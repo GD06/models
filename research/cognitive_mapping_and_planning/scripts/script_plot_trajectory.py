@@ -191,7 +191,7 @@ def plot_trajectory_first_person(dt, orig_maps, out_dir):
     _, action_to_nodes = b.get_feasible_actions(node_ids)
     for j in range(num_steps-1):
       action_to_node = action_to_nodes[j]
-      node_to_action = dict(zip(action_to_node.values(), action_to_node.keys()))
+      node_to_action = dict(list(zip(list(action_to_node.values()), list(action_to_node.keys()))))
       actions.append(node_to_action[node_ids[j+1]])
     
     def init_fn():
@@ -220,7 +220,7 @@ def plot_trajectory_first_person(dt, orig_maps, out_dir):
       t.set_bbox(dict(color='white', alpha=0.85, pad=-0.1))
       
       # Action to take.
-      action_latex = ['$\odot$ ', '$\curvearrowright$ ', '$\curvearrowleft$ ', '$\Uparrow$ ']
+      action_latex = ['$\odot$ ', '$\curvearrowright$ ', '$\curvearrowleft$ ', '$\\Uparrow$ ']
       t = ax.text(0.99, 0.99, action_latex[actions[step_number]],
           horizontalalignment='right',
           verticalalignment='top',
@@ -265,7 +265,7 @@ def plot_trajectory_first_person(dt, orig_maps, out_dir):
     tmp_file_name = 'tmp.mp4'
     line_ani.save(tmp_file_name, writer=writer, savefig_kwargs={'facecolor':'black'})
     out_file_name = os.path.join(out_dir, 'vis_{:04d}.mp4'.format(i))
-    print out_file_name
+    print(out_file_name)
 
     if fu.exists(out_file_name):
       gfile.Remove(out_file_name)
@@ -279,7 +279,7 @@ def plot_trajectory(dt, hardness, orig_maps, out_dir):
   fu.makedirs(out_dir)
   out_file = os.path.join(out_dir, 'all_locs_at_t.pkl')
   dt['hardness'] = hardness
-  utils.save_variables(out_file, dt.values(), dt.keys(), overwrite=True)
+  utils.save_variables(out_file, list(dt.values()), list(dt.keys()), overwrite=True)
   
   #Plot trajectories onto the maps
   plt.set_cmap('gray')
@@ -318,7 +318,7 @@ def plot_trajectory(dt, hardness, orig_maps, out_dir):
     ax.set_ylim([xy1[1], xy2[1]])
     
     file_name = os.path.join(out_dir, 'trajectory_{:04d}.png'.format(i))
-    print file_name
+    print(file_name)
     with fu.fopen(file_name, 'w') as f: 
       plt.savefig(f)
     plt.close(fig)

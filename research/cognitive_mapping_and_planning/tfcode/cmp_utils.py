@@ -112,7 +112,7 @@ def get_visual_frustum(map_size, shape_like, expand_dims=[0,0]):
 
 def deconv(x, is_training, wt_decay, neurons, strides, layers_per_block,
             kernel_size, conv_fn, name, offset=0):
-  """Generates a up sampling network with residual connections. 
+  """Generates a up sampling network with residual connections.
   """
   batch_norm_param = {'center': True, 'scale': True,
                       'activation_fn': tf.nn.relu,
@@ -140,13 +140,12 @@ def fr_v2(x, output_neurons, inside_neurons, is_training, name='fr',
   """
   if type(stride) != list:
     stride = [stride]
-  with slim.arg_scope(resnet_v2.resnet_utils.resnet_arg_scope(
-      is_training=is_training, weight_decay=wt_decay)):
+  with slim.arg_scope(resnet_v2.resnet_utils.resnet_arg_scope(weight_decay=wt_decay)):
     with slim.arg_scope([slim.batch_norm], updates_collections=updates_collections) as arg_sc:
       # Change the updates_collections for the conv normalizer_params to None
-      for i in range(len(arg_sc.keys())):
-        if 'convolution' in arg_sc.keys()[i]:
-          arg_sc.values()[i]['normalizer_params']['updates_collections'] = updates_collections
+      for i in range(len(list(arg_sc.keys()))):
+        if 'convolution' in list(arg_sc.keys())[i]:
+          list(arg_sc.values())[i]['normalizer_params']['updates_collections'] = updates_collections
       with slim.arg_scope(arg_sc):
         bottleneck = resnet_v2.bottleneck
         blocks = []

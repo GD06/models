@@ -21,7 +21,7 @@ r"""Implements loading and rendering of meshes. Contains 2 classes:
 
   SwiftshaderRenderer: Class that renders Shapes. Currently this uses python
     bindings to OpenGL (EGL), bindings to an alternate renderer may be implemented
-    here. 
+    here.
 """
 
 import numpy as np, os
@@ -29,7 +29,7 @@ import cv2, ctypes, logging, os, numpy as np
 import pyassimp as assimp
 from OpenGL.GLES2 import *
 from OpenGL.EGL import *
-import src.rotation_utils as ru 
+import src.rotation_utils as ru
 
 __version__ = 'swiftshader_renderer'
 
@@ -40,16 +40,16 @@ def get_shaders(modalities):
 
 def sample_points_on_faces(vs, fs, rng, n_samples_per_face):
   idx = np.repeat(np.arange(fs.shape[0]), n_samples_per_face)
-  
+
   r = rng.rand(idx.size, 2)
   r1 = r[:,:1]; r2 = r[:,1:]; sqrt_r1 = np.sqrt(r1);
-  
+
   v1 = vs[fs[idx, 0], :]; v2 = vs[fs[idx, 1], :]; v3 = vs[fs[idx, 2], :];
   pts = (1-sqrt_r1)*v1 + sqrt_r1*(1-r2)*v2 + sqrt_r1*r2*v3
-  
+
   v1 = vs[fs[:,0], :]; v2 = vs[fs[:, 1], :]; v3 = vs[fs[:, 2], :];
   ar = 0.5*np.sqrt(np.sum(np.cross(v1-v3, v2-v3)**2, 1))
-  
+
   return pts, ar, idx
 
 class Shape():
@@ -146,7 +146,7 @@ class Shape():
     p, face_areas, face_idx = sample_points_on_faces(
         v, f, np.random.RandomState(0), n_samples_per_face)
     return p, face_areas, face_idx
-  
+
   def __del__(self):
     scene = self.scene
     assimp.release(scene)
@@ -158,24 +158,27 @@ class SwiftshaderRenderer():
   def init_display(self, width, height, fov, z_near, z_far, rgb_shader,
                    d_shader):
     self.init_renderer_egl(width, height)
+    #print('init_renderer_egl successfully.')
     dir_path = os.path.dirname(os.path.realpath(__file__))
     if d_shader is not None and rgb_shader is not None:
       logging.fatal('Does not support setting both rgb_shader and d_shader.')
-    
+
     if d_shader is not None:
       assert rgb_shader is None
       shader = d_shader
       self.modality = 'depth'
-    
+
     if rgb_shader is not None:
       assert d_shader is None
       shader = rgb_shader
       self.modality = 'rgb'
-    
+
     self.create_shaders(os.path.join(dir_path, shader+'.vp'),
                         os.path.join(dir_path, shader + '.fp'))
+    #print('create_shadders successfully.')
     aspect = width*1./(height*1.)
     self.set_camera(fov, z_near, z_far, aspect)
+    #print('set_camera successfully.')
 
   def init_renderer_egl(self, width, height):
     major,minor = ctypes.c_long(),ctypes.c_long()
@@ -225,6 +228,8 @@ class SwiftshaderRenderer():
     self.width = width
 
   def create_shaders(self, v_shader_file, f_shader_file):
+    #print('v_shader_file: {}'.format(v_shader_file))
+    #print('f_shader_file: {}'.format(f_shader_file))
     v_shader = glCreateShader(GL_VERTEX_SHADER)
     with open(v_shader_file, 'r') as f:
       ls = ''
@@ -243,7 +248,7 @@ class SwiftshaderRenderer():
     glCompileShader(f_shader);
     assert(glGetShaderiv(f_shader, GL_COMPILE_STATUS) == 1)
 
-    egl_program = glCreateProgram();
+    egl_program = glCreateProgram()
     assert(egl_program)
     glAttachShader(egl_program, v_shader)
     glAttachShader(egl_program, f_shader)
@@ -259,12 +264,13 @@ class SwiftshaderRenderer():
     self.egl_mapping['vertexs'] = 0
     self.egl_mapping['vertexs_color'] = 1
     self.egl_mapping['vertexs_tc'] = 2
-    
-    glClearColor(0.0, 0.0, 0.0, 1.0);
+
+    glClearColor(0.0, 0.0, 0.0, 1.0)
     # glEnable(GL_CULL_FACE); glCullFace(GL_BACK);
-    glEnable(GL_DEPTH_TEST);
-    
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glEnable(GL_DEPTH_TEST)
+
+    #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    #print('create_shaders successfully.')
 
   def set_camera(self, fov_vertical, z_near, z_far, aspect):
     width = 2*np.tan(np.deg2rad(fov_vertical)/2.0)*z_near*aspect;
@@ -278,13 +284,13 @@ class SwiftshaderRenderer():
     c[0,0] = 2.0*z_near/width
     c[1,1] = 2.0*z_near/height
     c = c.T
-    
+
     projection_matrix_o = glGetUniformLocation(egl_program, 'uProjectionMatrix')
     projection_matrix = np.eye(4, dtype=np.float32)
     projection_matrix[...] = c
     projection_matrix = np.reshape(projection_matrix, (-1))
     glUniformMatrix4fv(projection_matrix_o, 1, GL_FALSE, projection_matrix)
-    
+
 
   def load_default_object(self):
     v = np.array([[0.0, 0.5, 0.0, 1.0, 1.0, 0.0, 1.0],
@@ -304,7 +310,7 @@ class SwiftshaderRenderer():
     self.num_to_render = 6;
 
   def _actual_render(self):
-    for entity_id, entity in self.entities.iteritems():
+    for entity_id, entity in self.entities.items():
       if entity['visible']:
         vbo = entity['vbo']
         tbo = entity['tbo']
@@ -337,7 +343,7 @@ class SwiftshaderRenderer():
         glReadPixels(0, 0, self.width, self.height, GL_RGBA, GL_UNSIGNED_BYTE, screenshot_rgba)
         np_rgb_img = screenshot_rgba[::-1,:,:3];
 
-      if self.modality == 'depth': 
+      if self.modality == 'depth':
         screenshot_d = np.zeros((self.height, self.width, 4), dtype=np.uint8)
         glReadPixels(0, 0, self.width, self.height, GL_RGBA, GL_UNSIGNED_BYTE, screenshot_d)
         np_d_img = screenshot_d[::-1,:,:3];
@@ -411,7 +417,7 @@ class SwiftshaderRenderer():
     return None, None #camera_xyz, q
 
   def clear_scene(self):
-    keys = self.entities.keys()
+    keys = list(self.entities.keys())
     for entity_id in keys:
       entity = self.entities.pop(entity_id, None)
       vbo = entity['vbo']

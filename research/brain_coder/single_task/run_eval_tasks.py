@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function
+
 
 r"""This script can launch any eval experiments from the paper.
 
@@ -165,7 +165,7 @@ def parse_args(extra_args=()):
     tasks = {name: S(length=default_length) for name in iclr_tasks}
   elif args.regression_tests:
     tasks = {name: S(length=default_length) for name in regression_test_tasks}
-  print('Tasks: %s' % tasks.keys())
+  print('Tasks: %s' % list(tasks.keys()))
 
   print('reps = %d' % (int(args.reps),))
 
@@ -278,7 +278,7 @@ if __name__ == '__main__':
   run(COMPILE_COMMAND)
 
   print('Launching %d coding tasks...' % len(tasks))
-  for task, task_settings in tasks.iteritems():
+  for task, task_settings in tasks.items():
     name = 'bf_rl_iclr'
     desc = '{0}.{1}_{2}'.format(args.desc, experiment_settings.name, task)
     job_name = '{}.{}'.format(name, desc)

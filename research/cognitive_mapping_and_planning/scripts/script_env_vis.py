@@ -22,7 +22,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')
 from PIL import ImageTk, Image
-import Tkinter as tk
+import tkinter as tk
 import logging
 from tensorflow.python.platform import app
 from tensorflow.python.platform import flags
@@ -90,7 +90,7 @@ def walk_through(b):
 
   root = tk.Tk()
   image = b.render_nodes(b.task.nodes[[current_node],:])[0]
-  print image.shape
+  print(image.shape)
   image = image.astype(np.uint8)
   im = Image.fromarray(image)
   im = ImageTk.PhotoImage(im)

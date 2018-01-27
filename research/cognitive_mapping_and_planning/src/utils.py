@@ -16,7 +16,7 @@
 r"""Generaly Utilities.
 """
 
-import numpy as np, cPickle, os, time
+import numpy as np, pickle, os, time
 import src.file_utils as fu
 import logging
 
@@ -58,7 +58,7 @@ class Foo(object):
     self.__dict__.update(kwargs)
   def __str__(self):
     str_ = ''
-    for v in vars(self).keys():
+    for v in list(vars(self).keys()):
       a = getattr(self, v)
       if True: #isinstance(v, object):
         str__ = str(a)
@@ -72,7 +72,7 @@ class Foo(object):
 
 def dict_equal(dict1, dict2):
   assert(set(dict1.keys()) == set(dict2.keys())), "Sets of keys between 2 dictionaries are different."
-  for k in dict1.keys():
+  for k in list(dict1.keys()):
     assert(type(dict1[k]) == type(dict2[k])), "Type of key '{:s}' if different.".format(k)
     if type(dict1[k]) == np.ndarray:
       assert(dict1[k].dtype == dict2[k].dtype), "Numpy Type of key '{:s}' if different.".format(k)
@@ -93,12 +93,12 @@ def tic_toc_print(interval, string):
   global tic_toc_print_time_old
   if 'tic_toc_print_time_old' not in globals():
     tic_toc_print_time_old = time.time()
-    print string
+    print(string)
   else:
     new_time = time.time()
     if new_time - tic_toc_print_time_old > interval:
       tic_toc_print_time_old = new_time;
-      print string
+      print(string)
 
 def mkdir_if_missing(output_dir):
   if not fu.exists(output_dir):
@@ -110,15 +110,15 @@ def save_variables(pickle_file_name, var, info, overwrite = False):
   # Construct the dictionary
   assert(type(var) == list); assert(type(info) == list);
   d = {}
-  for i in xrange(len(var)):
+  for i in range(len(var)):
     d[info[i]] = var[i]
-  with fu.fopen(pickle_file_name, 'w') as f:
-    cPickle.dump(d, f, cPickle.HIGHEST_PROTOCOL)
+  with fu.fopen(pickle_file_name, 'wb') as f:
+    pickle.dump(d, f, pickle.HIGHEST_PROTOCOL)
 
 def load_variables(pickle_file_name):
   if fu.exists(pickle_file_name):
-    with fu.fopen(pickle_file_name, 'r') as f:
-      d = cPickle.load(f)
+    with fu.fopen(pickle_file_name, 'rb') as f:
+      d = pickle.load(f)
     return d
   else:
     raise Exception('{:s} does not exists.'.format(pickle_file_name))
@@ -126,7 +126,7 @@ def load_variables(pickle_file_name):
 def voc_ap(rec, prec):
   rec = rec.reshape((-1,1))
   prec = prec.reshape((-1,1))
-  z = np.zeros((1,1)) 
+  z = np.zeros((1,1))
   o = np.ones((1,1))
   mrec = np.vstack((z, rec, o))
   mpre = np.vstack((z, prec, z))

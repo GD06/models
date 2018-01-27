@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 r"""Run grid search.
 
@@ -95,9 +95,9 @@ def run_tuner_loop(ns):
   tuning_space = ns.define_tuner_hparam_space(
       hparam_space_type=FLAGS.hparam_space)
   fixed_hparams = parse_hparams_string(FLAGS.fixed_hparams)
-  for name, value in fixed_hparams.iteritems():
+  for name, value in fixed_hparams.items():
     tuning_space[name] = [value]
-  tuning_space_size = np.prod([len(values) for values in tuning_space.values()])
+  tuning_space_size = np.prod([len(values) for values in list(tuning_space.values())])
 
   num_local_trials, remainder = divmod(tuning_space_size, FLAGS.num_tuners)
   if FLAGS.tuner_id < remainder:
@@ -109,7 +109,7 @@ def run_tuner_loop(ns):
   logging.info('num_local_trials: %d', num_local_trials)
   logging.info('starting_trial_id: %d', starting_trial_id)
 
-  for local_trial_index in xrange(num_local_trials):
+  for local_trial_index in range(num_local_trials):
     trial_config = defaults.default_config_with_updates(FLAGS.config)
     global_trial_index = local_trial_index + starting_trial_id
     trial_name = 'trial_' + str(global_trial_index)
@@ -183,7 +183,7 @@ def compute_tuning_objective(results_list, hparams, trial_name, num_trials):
       'avg_programs': np.mean(successful_program_counts),
       'max_possible_programs_per_run': max_programs,
       'global_step': sum([r['num_batches'] for r in results_list]),
-      'hparams': hparams.values(),
+      'hparams': list(hparams.values()),
       'trial_name': trial_name,
       'num_trials': num_trials}
 

@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 """Reward functions, distance functions, and reward managers."""
 
@@ -247,7 +247,7 @@ def absolute_log_distance_reward(pred, target, base):
 # Reward managers assign reward to many code attempts throughout an episode.
 
 
-class RewardManager(object):
+class RewardManager(object, metaclass=ABCMeta):
   """Reward managers administer reward across an episode.
 
   Reward managers are used for "editor" environments. These are environments
@@ -262,7 +262,6 @@ class RewardManager(object):
   junk programs as often as possible. So reward managers should not give the
   same reward twice if the next proposal is not better than the last.
   """
-  __metaclass__ = ABCMeta
 
   def __init__(self, target, base, distance_fn=absolute_distance):
     self._target = list(target)

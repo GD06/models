@@ -57,9 +57,9 @@ from tensorflow.python.platform import flags
 from cfgs import config_cmp
 from cfgs import config_vision_baseline
 import datasets.nav_env as nav_env
-import src.file_utils as fu 
+import src.file_utils as fu
 import src.utils as utils
-import tfcode.cmp as cmp 
+import tfcode.cmp as cmp
 from tfcode import tf_utils
 from tfcode import vision_baseline_lstm
 
@@ -115,6 +115,9 @@ def get_args_for_config(config_name):
 
   else:
     logging.fatal('Unknown type: {:s}'.format(type))
+
+  configs = config_name.split('+')
+
   return args
 
 def _setup_args(config_name, logdir):
@@ -136,7 +139,7 @@ def _train(args):
   m.tf_graph = tf.Graph()
 
   config = tf.ConfigProto()
-  config.device_count['GPU'] = 1
+  #config.device_count['GPU'] = 1
 
   with m.tf_graph.as_default():
     with tf.device(tf.train.replica_device_setter(args.solver.ps_tasks,
@@ -180,7 +183,7 @@ def _test(args):
   logging.error('Checkpoint_dir: %s', args.logdir)
 
   config = tf.ConfigProto();
-  config.device_count['GPU'] = 1;
+  #config.device_count['GPU'] = 1;
 
   m = utils.Foo()
   m.tf_graph = tf.Graph()
@@ -200,11 +203,12 @@ def _test(args):
         iters=args.summary.test_iters, train_display_interval=None,
         dagger_sample_bn_false=args.arch.dagger_sample_bn_false)
 
-      saver = slim.learning.tf_saver.Saver(variables.get_variables_to_restore())
+      saver = tf.train.Saver(variables.get_variables_to_restore())
+      #saver = slim.learning.tf_saver.Saver(variables.get_variables_to_restore())
 
-      sv = slim.learning.supervisor.Supervisor(
-          graph=ops.get_default_graph(), logdir=None, init_op=m.init_op,
-          summary_op=None, summary_writer=None, global_step=None, saver=m.saver_op)
+      #sv = slim.learning.supervisor.Supervisor(
+      #    graph=ops.get_default_graph(), logdir=None, init_op=m.init_op,
+      #    summary_op=None, summary_writer=None, global_step=None, saver=m.saver_op)
 
       last_checkpoint = None
       reported = False
@@ -222,32 +226,40 @@ def _test(args):
                      time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime()),
                      last_checkpoint)
 
-        if (args.control.only_eval_when_done == False or 
+        if (args.control.only_eval_when_done == False or
             checkpoint_iter >= args.solver.max_steps):
           start = time.time()
-          logging.info('Starting evaluation at %s using checkpoint %s.', 
+          logging.info('Starting evaluation at %s using checkpoint %s.',
                        time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime()),
                        last_checkpoint)
 
-          with sv.managed_session(args.solver.master, config=config,
-                                  start_standard_services=False) as sess:
-            sess.run(m.init_op)
-            sv.saver.restore(sess, last_checkpoint)
-            sv.start_queue_runners(sess)
-            if args.control.reset_rng_seed:
-              train_step_kwargs['rng_data'] = [np.random.RandomState(rng_data_seed),
-                                               np.random.RandomState(rng_data_seed)]
-              train_step_kwargs['rng_action'] = np.random.RandomState(rng_action_seed)
-            vals, _ = tf_utils.train_step_custom_online_sampling(
+          sess = tf.Session()
+          saver.restore(sess, last_checkpoint)
+          tf.train.start_queue_runners(sess=sess)
+
+          #with sv.managed_session(args.solver.master, config=config,
+          #                        start_standard_services=False) as sess:
+          #  sess.run(m.init_op)
+          #  sv.saver.restore(sess, last_checkpoint)
+          #  sv.start_queue_runners(sess)
+          if args.control.reset_rng_seed:
+            train_step_kwargs['rng_data'] = [np.random.RandomState(rng_data_seed),
+                                              np.random.RandomState(rng_data_seed)]
+            train_step_kwargs['rng_action'] = np.random.RandomState(rng_action_seed)
+          print('Before train_step_custom_online_sampling...')
+          model_name = FLAGS.config_name.split('+')[0]
+          print('Model name: ', model_name)
+          vals, _ = tf_utils.train_step_custom_online_sampling(
                 sess, None, m.global_step_op, train_step_kwargs,
-                mode=args.control.test_mode)
-            should_stop = False
+                mode=args.control.test_mode,
+                model_name=model_name)
+          #  should_stop = False
 
-            if checkpoint_iter >= args.solver.max_steps: 
-              should_stop = True
+          #  if checkpoint_iter >= args.solver.max_steps:
+          #    should_stop = True
 
-            if should_stop:
-              break
+          #  if should_stop:
+          #    break
 
 if __name__ == '__main__':
   app.run()

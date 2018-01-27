@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 """Genetic algorithm for BF tasks.
 
@@ -10,7 +10,7 @@ Inspired by https://github.com/primaryobjects/AI-Programmer.
 GA function code borrowed from https://github.com/DEAP/deap.
 """
 
-import cPickle
+import pickle
 import os
 import sys
 from time import sleep
@@ -69,7 +69,7 @@ class CheckpointWriter(object):
       population: List of Individual objects.
       halloffame: Hall-of-fame buffer. Typically a priority queue.
     """
-    raw = cPickle.dumps((gen, population, halloffame))
+    raw = pickle.dumps((gen, population, halloffame))
     with tf.gfile.FastGFile(self.checkpoint_file, 'w') as f:
       f.write(raw)
 
@@ -86,7 +86,7 @@ class CheckpointWriter(object):
     """
     with tf.gfile.FastGFile(self.checkpoint_file, 'r') as f:
       raw = f.read()
-    objs = cPickle.loads(raw)
+    objs = pickle.loads(raw)
     # Validate data.
     assert isinstance(objs, tuple) and len(objs) == 3, (
         'Expecting a 3-tuple, but got %s instead.' % (objs,))
@@ -153,7 +153,7 @@ def run_training(config=None, tuner=None, logdir=None, trial_name=None,  # pylin
     logging.info('Max samples per rep: %d', FLAGS.max_npe)
     logging.info('Max generations per rep: %d', max_generations)
   else:
-    max_generations = sys.maxint
+    max_generations = sys.maxsize
     logging.info('Running unlimited generations.')
 
   assert FLAGS.num_workers > 0
@@ -173,7 +173,7 @@ def run_training(config=None, tuner=None, logdir=None, trial_name=None,  # pylin
           FLAGS.num_repetitions)
   start_rep = len(local_results_list)
 
-  for rep in xrange(start_rep, num_local_reps):
+  for rep in range(start_rep, num_local_reps):
     global_rep = num_local_reps * FLAGS.task_id + rep
     logging.info(
         'Starting repetition: Rep = %d. (global rep = %d)',

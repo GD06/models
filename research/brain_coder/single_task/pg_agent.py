@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 """Language model agent.
 
@@ -522,7 +522,7 @@ class LMAgent(object):
           tf.convert_to_tensor(g) for g in unclipped_grads]
       self.grads, self.global_grad_norm = tf.clip_by_global_norm(
           unclipped_grads, config.grad_clip_threshold)
-      self.gradients_dict = dict(zip(params, self.grads))
+      self.gradients_dict = dict(list(zip(params, self.grads)))
       self.optimizer = make_optimizer(config.optimizer, self.learning_rate)
       self.all_variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
                                              tf.get_variable_scope().name)
@@ -856,11 +856,11 @@ class LMAgent(object):
       if (not empty_replay_buffer) and num_programs_from_replay_buff:
         result = self.experience_replay.sample_many(
             num_programs_from_replay_buff)
-        experience_samples, replay_weights = zip(*result)
+        experience_samples, replay_weights = list(zip(*result))
         (replay_actions,
          replay_rewards,
          _,  # log probs
-         replay_adjusted_lengths) = zip(*experience_samples)
+         replay_adjusted_lengths) = list(zip(*experience_samples))
 
         replay_batch_actions = utils.stack_pad(replay_actions, pad_axes=0,
                                                dtype=np.int32)
@@ -956,7 +956,7 @@ class LMAgent(object):
         (on_policy_actions,
          _,  # rewards
          on_policy_log_probs,
-         on_policy_adjusted_lengths) = zip(*new_experiences)
+         on_policy_adjusted_lengths) = list(zip(*new_experiences))
       else:
         new_experiences = []
         on_policy_policy_multipliers = []
@@ -969,7 +969,7 @@ class LMAgent(object):
         # is in the buffer.
         on_policy_weights = [0] * num_programs_from_policy
         for i, cs in enumerate(code_strings):
-          if self.experience_replay.has_key(cs):
+          if cs in self.experience_replay:
             on_policy_weights[i] = self.experience_replay.get_weight(cs)
 
       # Randomly select on-policy or off policy episodes to train on.
@@ -1051,10 +1051,10 @@ class LMAgent(object):
 
     # Update EMA baselines on the mini-batch which we just did traning on.
     if not self.a2c:
-      for i in xrange(rl_batch.batch_size):
+      for i in range(rl_batch.batch_size):
         episode_length = combined_adjusted_lengths[i]
         empirical_returns = combined_returns[i, :episode_length]
-        for j in xrange(episode_length):
+        for j in range(episode_length):
           # Update ema_baselines in place.
           self.ema_by_len[j] = (
               self.ema_baseline_decay * self.ema_by_len[j]
@@ -1090,7 +1090,7 @@ class LMAgent(object):
           solutions = [
               {'code': code_strings[i], 'reward': batch_tot_r[i],
                'npe': global_npe}
-              for i in xrange(len(reasons)) if reasons[i] == 'correct']
+              for i in range(len(reasons)) if reasons[i] == 'correct']
         elif is_best:
           solutions = [
               {'code': code_strings[np.argmax(batch_tot_r)],
@@ -1193,7 +1193,7 @@ def compute_rewards(rl_batch, batch_actions, episode_lengths, batch_size=None):
     # reward_fns is a list of functions, same length as code_strings.
     assert len(rl_batch.reward_fns) >= batch_size
     r_fn_results = [
-        rl_batch.reward_fns[i](code_strings[i]) for i in xrange(batch_size)]
+        rl_batch.reward_fns[i](code_strings[i]) for i in range(batch_size)]
   else:
     # reward_fns is allowed to be one function which processes a batch of code
     # strings. This is useful for efficiency and batch level computation.
@@ -1256,7 +1256,7 @@ def process_episodes(
   assert num_programs <= len(episode_lengths)
   batch_returns = [None] * num_programs
   batch_targets = [None] * num_programs
-  for i in xrange(num_programs):
+  for i in range(num_programs):
     episode_length = episode_lengths[i]
     assert len(batch_rewards[i]) == episode_length
     # Compute target for each timestep.
@@ -1283,7 +1283,7 @@ def process_episodes(
       assert baselines is not None
       empirical_returns = rollout_lib.discount(batch_rewards[i], gamma=1.0)
       targets = [None] * episode_length
-      for j in xrange(episode_length):
+      for j in range(episode_length):
         targets[j] = empirical_returns[j] - baselines[j]
       batch_returns[i] = empirical_returns
       batch_targets[i] = targets

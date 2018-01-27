@@ -1,11 +1,11 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 r"""Train RL agent on coding tasks."""
 
 import contextlib
-import cPickle
+import pickle
 import cProfile
 import marshal
 import os
@@ -255,21 +255,21 @@ class AsyncTrainer(object):
       return 'local' + name[6:]
     sync_dict = {
         local_params_dict[_global_to_local_scope(p_name)]: p
-        for p_name, p in global_params_dict.items()}
+        for p_name, p in list(global_params_dict.items())}
     self.sync_op = tf.group(*[v_local.assign(v_global)
                               for v_local, v_global
-                              in sync_dict.items()])
+                              in list(sync_dict.items())])
 
     # Pair local gradients with global params.
     grad_var_dict = {
         gradient: sync_dict[local_var]
-        for local_var, gradient in model.gradients_dict.items()}
+        for local_var, gradient in list(model.gradients_dict.items())}
 
     # local model
     model.make_summary_ops()  # Don't put summaries under 'local' scope.
     with tf.variable_scope('local'):
       self.train_op = model.optimizer.apply_gradients(
-          grad_var_dict.items(), global_step=self.global_step)
+          list(grad_var_dict.items()), global_step=self.global_step)
       self.local_init_op = tf.variables_initializer(
           tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
                             tf.get_variable_scope().name))
@@ -287,11 +287,11 @@ class AsyncTrainer(object):
     if self.model.top_episodes is not None and tf.gfile.Exists(self.topk_file):
       try:
         with tf.gfile.FastGFile(self.topk_file, 'r') as f:
-          self.model.top_episodes = cPickle.loads(f.read())
+          self.model.top_episodes = pickle.loads(f.read())
         logging.info(
             'Loaded top-k buffer from disk with %d items. Location: "%s"',
             len(self.model.top_episodes), self.topk_file)
-      except (cPickle.UnpicklingError, EOFError) as e:
+      except (pickle.UnpicklingError, EOFError) as e:
         logging.warn(
             'Failed to load existing top-k buffer from disk. Removing bad file.'
             '\nLocation: "%s"\nException: %s', self.topk_file, str(e))
@@ -409,7 +409,7 @@ class AsyncTrainer(object):
       logging.info('Saving top-k buffer to "%s".', self.topk_file)
       # Overwrite previous data each time.
       with tf.gfile.FastGFile(self.topk_file, 'w') as f:
-        f.write(cPickle.dumps(self.model.top_episodes))
+        f.write(pickle.dumps(self.model.top_episodes))
 
 
 @contextlib.contextmanager

@@ -15,7 +15,7 @@
 
 """Various losses for training navigation agents.
 
-Defines various loss functions for navigation agents, 
+Defines various loss functions for navigation agents,
 compute_losses_multi_or.
 """
 
@@ -30,7 +30,7 @@ from tensorflow.contrib.slim import arg_scope
 from tensorflow.contrib.slim.nets import resnet_v2
 from tensorflow.python.training import moving_averages
 import logging
-from src import utils 
+from src import utils
 import src.file_utils as fu
 from tfcode import tf_utils
 
@@ -39,11 +39,11 @@ def compute_losses_multi_or(logits, actions_one_hot, weights=None,
                             num_actions=-1, data_loss_wt=1., reg_loss_wt=1.,
                             ewma_decay=0.99, reg_loss_op=None):
   assert(num_actions > 0), 'num_actions must be specified and must be > 0.'
-  
+
   with tf.name_scope('loss'):
     if weights is None:
       weight = tf.ones_like(actions_one_hot, dtype=tf.float32, name='weight')
-    
+
     actions_one_hot = tf.cast(tf.reshape(actions_one_hot, [-1, num_actions],
                                          're_actions_one_hot'), tf.float32)
     weights = tf.reduce_sum(tf.reshape(weights, [-1, num_actions], 're_weight'),
@@ -61,9 +61,9 @@ def compute_losses_multi_or(logits, actions_one_hot, weights=None,
         reg_loss_op = tf.add_n(tf.losses.get_regularization_losses())
       else:
         reg_loss_op = tf.constant(0.)
-    
+
     if reg_loss_wt > 0:
-      total_loss_op = data_loss_wt*data_loss_op + reg_loss_wt*reg_loss_op 
+      total_loss_op = data_loss_wt*data_loss_op + reg_loss_wt*reg_loss_op
     else:
       total_loss_op = data_loss_wt*data_loss_op
 
@@ -98,7 +98,7 @@ def get_repr_from_image(images_reshaped, modalities, data_augment, encoder,
     scope_name = 'd_'+encoder
 
   resnet_is_training = is_training and (not freeze_conv)
-  with slim.arg_scope(resnet_v2.resnet_utils.resnet_arg_scope(resnet_is_training)):
+  with slim.arg_scope(resnet_v2.resnet_utils.resnet_arg_scope()):
     fn = getattr(tf_utils, encoder)
     x, end_points = fn(x, num_classes=None, global_pool=False,
                        output_stride=None, reuse=None,
@@ -112,29 +112,29 @@ def default_train_step_kwargs(m, obj, logdir, rng_seed, is_chief, num_steps,
                               iters, train_display_interval,
                               dagger_sample_bn_false):
   train_step_kwargs = {}
-  train_step_kwargs['obj'] = obj 
+  train_step_kwargs['obj'] = obj
   train_step_kwargs['m'] = m
-  
+
   # rng_data has 2 independent rngs, one for sampling episodes and one for
   # sampling perturbs (so that we can make results reproducible.
-  train_step_kwargs['rng_data'] = [np.random.RandomState(rng_seed), 
+  train_step_kwargs['rng_data'] = [np.random.RandomState(rng_seed),
                                    np.random.RandomState(rng_seed)]
   train_step_kwargs['rng_action'] = np.random.RandomState(rng_seed)
-  if is_chief: 
+  if is_chief:
     train_step_kwargs['writer'] = tf.summary.FileWriter(logdir) #, m.tf_graph)
   else:
     train_step_kwargs['writer'] = None
   train_step_kwargs['iters'] = iters
-  train_step_kwargs['train_display_interval'] = train_display_interval 
+  train_step_kwargs['train_display_interval'] = train_display_interval
   train_step_kwargs['num_steps'] = num_steps
   train_step_kwargs['logdir'] = logdir
-  train_step_kwargs['dagger_sample_bn_false'] = dagger_sample_bn_false 
+  train_step_kwargs['dagger_sample_bn_false'] = dagger_sample_bn_false
   return train_step_kwargs
 
 # Utilities for visualizing and analysing validation output.
 def save_d_at_t(outputs, global_step, output_dir, metric_summary, N):
   """Save distance to goal at all time steps.
-  
+
   Args:
     outputs        : [gt_dist_to_goal].
     global_step : number of iterations.
@@ -143,7 +143,7 @@ def save_d_at_t(outputs, global_step, output_dir, metric_summary, N):
     N              : number of outputs to process.
 
   """
-  d_at_t = np.concatenate(map(lambda x: x[0][:,:,0]*1, outputs), axis=0)
+  d_at_t = np.concatenate([x[0][:,:,0]*1 for x in outputs], axis=0)
   fig, axes = utils.subplot(plt, (1,1), (5,5))
   axes.plot(np.arange(d_at_t.shape[1]), np.mean(d_at_t, axis=0), 'r.')
   axes.set_xlabel('time step')
@@ -159,7 +159,7 @@ def save_d_at_t(outputs, global_step, output_dir, metric_summary, N):
 
 def save_all(outputs, global_step, output_dir, metric_summary, N):
   """Save numerous statistics.
-  
+
   Args:
     outputs        : [locs, goal_loc, gt_dist_to_goal, node_ids, perturbs]
     global_step    : number of iterations.
@@ -167,12 +167,12 @@ def save_all(outputs, global_step, output_dir, metric_summary, N):
     metric_summary : to append scalars to summary.
     N              : number of outputs to process.
   """
-  all_locs = np.concatenate(map(lambda x: x[0], outputs), axis=0)
-  all_goal_locs = np.concatenate(map(lambda x: x[1], outputs), axis=0)
-  all_d_at_t = np.concatenate(map(lambda x: x[2][:,:,0]*1, outputs), axis=0)
-  all_node_ids = np.concatenate(map(lambda x: x[3], outputs), axis=0)
-  all_perturbs = np.concatenate(map(lambda x: x[4], outputs), axis=0)
-  
+  all_locs = np.concatenate([x[0] for x in outputs], axis=0)
+  all_goal_locs = np.concatenate([x[1] for x in outputs], axis=0)
+  all_d_at_t = np.concatenate([x[2][:,:,0]*1 for x in outputs], axis=0)
+  all_node_ids = np.concatenate([x[3] for x in outputs], axis=0)
+  all_perturbs = np.concatenate([x[4] for x in outputs], axis=0)
+
   file_name = os.path.join(output_dir, 'all_locs_at_t_{:d}.pkl'.format(global_step))
   vars = [all_locs, all_goal_locs, all_d_at_t, all_node_ids, all_perturbs]
   var_names = ['all_locs', 'all_goal_locs', 'all_d_at_t', 'all_node_ids', 'all_perturbs']
@@ -181,7 +181,7 @@ def save_all(outputs, global_step, output_dir, metric_summary, N):
 
 def eval_ap(outputs, global_step, output_dir, metric_summary, N, num_classes=4):
   """Processes the collected outputs to compute AP for action prediction.
-  
+
   Args:
     outputs        : [logits, labels]
     global_step    : global_step.
@@ -192,8 +192,8 @@ def eval_ap(outputs, global_step, output_dir, metric_summary, N, num_classes=4):
   """
   if N >= 0:
     outputs = outputs[:N]
-  logits = np.concatenate(map(lambda x: x[0], outputs), axis=0).reshape((-1, num_classes))
-  labels = np.concatenate(map(lambda x: x[1], outputs), axis=0).reshape((-1, num_classes))
+  logits = np.concatenate([x[0] for x in outputs], axis=0).reshape((-1, num_classes))
+  labels = np.concatenate([x[1] for x in outputs], axis=0).reshape((-1, num_classes))
   aps = []
   for i in range(logits.shape[1]):
     ap, rec, prec = utils.calc_pr(labels[:,i], logits[:,i])
@@ -203,11 +203,11 @@ def eval_ap(outputs, global_step, output_dir, metric_summary, N, num_classes=4):
   return aps
 
 def eval_dist(outputs, global_step, output_dir, metric_summary, N):
-  """Processes the collected outputs during validation to 
+  """Processes the collected outputs during validation to
   1. Plot the distance over time curve.
   2. Compute mean and median distances.
   3. Plots histogram of end distances.
-  
+
   Args:
     outputs        : [locs, goal_loc, gt_dist_to_goal].
     global_step    : global_step.
@@ -218,7 +218,7 @@ def eval_dist(outputs, global_step, output_dir, metric_summary, N):
   SUCCESS_THRESH = 3
   if N >= 0:
     outputs = outputs[:N]
-  
+
   # Plot distance at time t.
   d_at_t = []
   for i in range(len(outputs)):
@@ -253,7 +253,7 @@ def eval_dist(outputs, global_step, output_dir, metric_summary, N):
   d_ends = np.concatenate(d_ends, axis=0)
   axes.plot(d_inits+np.random.rand(*(d_inits.shape))-0.5,
             d_ends+np.random.rand(*(d_ends.shape))-0.5, '.', mec='red', mew=1.0)
-  axes.set_xlabel('init dist'); axes.set_ylabel('final dist'); 
+  axes.set_xlabel('init dist'); axes.set_ylabel('final dist');
   axes.grid('on'); axes.axis('equal');
   title_str = 'mean: {:0.1f}, 50: {:0.1f}, 75: {:0.2f}, s: {:0.1f}'
   title_str = title_str.format(
@@ -291,7 +291,7 @@ def eval_dist(outputs, global_step, output_dir, metric_summary, N):
     file_name = os.path.join(output_dir, 'dist_hist_{:d}.png'.format(global_step))
     with fu.fopen(file_name, 'w') as f:
       fig.savefig(f, bbox_inches='tight', transparent=True, pad_inches=0)
-  
+
   # Log distance metrics.
   tf_utils.add_value_to_summary(metric_summary, 'dists/success_init: ',
                                 100*(np.mean(d_inits <= SUCCESS_THRESH)))
@@ -316,7 +316,7 @@ def eval_dist(outputs, global_step, output_dir, metric_summary, N):
 def plot_trajectories(outputs, global_step, output_dir, metric_summary, N):
   """Processes the collected outputs during validation to plot the trajectories
   in the top view.
-  
+
   Args:
     outputs        : [locs, orig_maps, goal_loc].
     global_step    : global_step.
@@ -371,9 +371,9 @@ def add_default_summaries(mode, arop_full_summary_iters, summarize_ops,
                           input_tensors, scope_name):
   assert(mode == 'train' or mode == 'val' or mode == 'test'), \
     'add_default_summaries mode is neither train or val or test.'
-  
+
   s_ops = tf_utils.get_default_summary_ops()
-  
+
   if mode == 'train':
     s_ops.summary_ops, s_ops.print_summary_ops, additional_return_ops, \
     arop_summary_iters, arop_eval_fns = tf_utils.simple_summaries(
@@ -390,7 +390,7 @@ def add_default_summaries(mode, arop_full_summary_iters, summarize_ops,
     s_ops.additional_return_ops += additional_return_ops
     s_ops.arop_summary_iters += arop_summary_iters
     s_ops.arop_eval_fns += arop_eval_fns
-  
+
   elif mode == 'test':
     s_ops.summary_ops, s_ops.print_summary_ops, additional_return_ops, \
     arop_summary_iters, arop_eval_fns = tf_utils.simple_summaries(
@@ -399,7 +399,7 @@ def add_default_summaries(mode, arop_full_summary_iters, summarize_ops,
     s_ops.arop_summary_iters += arop_summary_iters
     s_ops.arop_eval_fns += arop_eval_fns
 
-  
+
   if mode == 'val':
     arop = s_ops.additional_return_ops
     arop += [[action_prob_op, input_tensors['train']['action']]]
@@ -412,7 +412,7 @@ def add_default_summaries(mode, arop_full_summary_iters, summarize_ops,
     s_ops.arop_summary_iters += [-1, arop_full_summary_iters,
                                  arop_full_summary_iters]
     s_ops.arop_eval_fns += [eval_ap, eval_dist, plot_trajectories]
-  
+
   elif mode == 'test':
     arop = s_ops.additional_return_ops
     arop += [[input_tensors['step']['loc_on_map'],

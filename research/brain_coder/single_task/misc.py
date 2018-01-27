@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 """Utilities specific to this project."""
 
@@ -15,7 +15,7 @@ from six import string_types
 
 BF_EOS_INT = 0  # Also used as SOS (start of sequence).
 BF_EOS_CHAR = TEXT_EOS_CHAR = '_'
-BF_LANG_INTS = range(1, 9)
+BF_LANG_INTS = list(range(1, 9))
 BF_INT_TO_CHAR = [BF_EOS_CHAR, '>', '<', '+', '-', '[', ']', '.', ',']
 BF_CHAR_TO_INT = dict([(c, i) for i, c in enumerate(BF_INT_TO_CHAR)])
 
@@ -117,7 +117,7 @@ def si_to_int(s):
   Returns:
     Integer equivalent to the string.
   """
-  if isinstance(s, string_types) and s[-1].lower() in si_magnitudes.keys():
+  if isinstance(s, string_types) and s[-1].lower() in list(si_magnitudes.keys()):
     return int(int(s[:-1]) * si_magnitudes[s[-1].lower()])
   return int(s)
 

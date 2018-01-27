@@ -17,17 +17,17 @@ r"""Navidation Environment. Includes the following classes along with some
 helper functions.
   Building: Loads buildings, computes traversibility, exposes functionality for
     rendering images.
-  
+
   GridWorld: Base class which implements functionality for moving an agent on a
     grid world.
-  
+
   NavigationEnv: Base class which generates navigation problems on a grid world.
-  
+
   VisualNavigationEnv: Builds upon NavigationEnv and Building to provide
-    interface that is used externally to train the agent. 
-  
+    interface that is used externally to train the agent.
+
   MeshMapper: Class used for distilling the model, testing the mapper.
-  
+
   BuildingMultiplexer: Wrapper class that instantiates a VisualNavigationEnv for
     each building and multiplexes between them as needed.
 """
@@ -106,8 +106,8 @@ def _select_classes(all_maps, all_cats, cats_to_use):
 def _get_room_dimensions(file_name, resolution, origin, flip=False):
   if fu.exists(file_name):
     a = utils.load_variables(file_name)['room_dimension']
-    names = a.keys()
-    dims = np.concatenate(a.values(), axis=0).reshape((-1,6))
+    names = list(a.keys())
+    dims = np.concatenate(list(a.values()), axis=0).reshape((-1,6))
     ind = np.argsort(names)
     dims = dims[ind,:]
     names = [names[x] for x in ind]
@@ -786,7 +786,7 @@ def _nav_env_reset_helper(type, rng, nodes, batch_size, gtG, max_dist,
   return start_node_ids, goal_node_ids, dists, target_class
 
 
-class NavigationEnv(GridWorld, Building):
+class NavigationEnv(Building):
   """Wrapper around GridWorld which sets up navigation tasks.
   """
   def _debug_save_hardness(self, seed):
@@ -800,7 +800,7 @@ class NavigationEnv(GridWorld, Building):
           self.task.sampling_distribution, self.task.target_distribution,
           self.task.nodes, self.task_params.n_ori, self.task_params.step_size,
           self.task.distribution_bins, self.task.rejection_sampling_M)
-    bins = self.task.distribution_bins 
+    bins = self.task.distribution_bins
     n_bins = self.task.n_bins
     with plt.style.context('ggplot'):
       fig, axes = utils.subplot(plt, (1,2), (10,10))
@@ -809,7 +809,7 @@ class NavigationEnv(GridWorld, Building):
       ax.plot(bins[:-1]+0.5/n_bins, self.task.target_distribution, 'g')
       ax.plot(bins[:-1]+0.5/n_bins, self.task.sampling_distribution, 'b')
       ax.grid('on')
-      
+
       ax = axes[1]
       _ = ax.hist(gt_dists, bins=np.arange(self.task_params.max_dist+1))
       ax.grid('on')
@@ -827,7 +827,7 @@ class NavigationEnv(GridWorld, Building):
     fig, ax = utils.subplot(plt, (1,1), (12,12))
     ax.plot(node_xyt[:,0], node_xyt[:,1], 'm.')
     ax.set_axis_off(); ax.axis('equal');
-    
+
     if self.room_dims is not None:
       for i, r in enumerate(self.room_dims['dims']*1):
         min_ = r[:3]*1
@@ -900,7 +900,7 @@ class NavigationEnv(GridWorld, Building):
                                   'target_distribution': target_d,
                                   'sampling_distribution': sampling_d,
                                   'rejection_sampling_M': rejection_sampling_M,
-                                  'n_bins': n_bins, 
+                                  'n_bins': n_bins,
                                   'n_ori': self.task_params.n_ori,
                                   'step_size': self.task_params.step_size,
                                   'min_dist': self.task_params.min_dist}
@@ -937,10 +937,10 @@ class NavigationEnv(GridWorld, Building):
         self.task.dist_to_class = dists
         a_, b_ = np.where(self.task.node_class_label)
         self.task.class_nodes = np.concatenate((a_[:,np.newaxis], b_[:,np.newaxis]), axis=1)
-        
+
         if self.logdir is not None:
           self._debug_semantic_maps(seed)
-        
+
         self.task.reset_kwargs = {'sampling': self.task_params.semantic_task.sampling,
                                   'class_nodes': self.task.class_nodes,
                                   'dist_to_class': self.task.dist_to_class}
@@ -1113,7 +1113,7 @@ class VisualNavigationEnv(NavigationEnv):
 
   def get_features(self, current_node_ids, step_number):
     task_params = self.task_params
-    goal_number = step_number / self.task_params.num_steps
+    goal_number = int(step_number / self.task_params.num_steps)
     end_nodes = self.task.nodes[self.episode.goal_node_ids[goal_number],:]*1
     current_nodes = self.task.nodes[current_node_ids,:]*1
     end_perturbs = self.episode.goal_perturbs[:,goal_number,:][:,np.newaxis,:]
@@ -1250,7 +1250,7 @@ class VisualNavigationEnv(NavigationEnv):
 
     # Images for the goal.
     if self.task_params.outputs.ego_goal_imgs:
-      if self.task_params.type[:14] != 'to_nearest_obj': 
+      if self.task_params.type[:14] != 'to_nearest_obj':
         loc, x_axis, y_axis, theta = self.get_loc_axis(current_nodes,
                                                        delta_theta=self.task.delta_theta,
                                                        perturb=perturbs[:,step_number,:])
@@ -1370,11 +1370,12 @@ class VisualNavigationEnv(NavigationEnv):
 class BuildingMultiplexer():
   def __init__(self, args, task_number):
     params = vars(args)
-    for k in params.keys():
+    for k in list(params.keys()):
       setattr(self, k, params[k])
     self.task_number = task_number
     self._pick_data(task_number)
     logging.info('Env Class: %s.', self.env_class)
+    print("Task: ", self.task_params.task)
     if self.task_params.task == 'planning':
       self._setup_planner()
     elif self.task_params.task == 'mapping':
@@ -1417,8 +1418,11 @@ class BuildingMultiplexer():
     r_obj.init_display(width=cp.width, height=cp.height, fov=cp.fov,
                        z_near=cp.z_near, z_far=cp.z_far, rgb_shader=rgb_shader,
                        d_shader=d_shader)
+    print("init_display successfully")
     self.r_obj = r_obj
+    print("Calling clear_scene()")
     r_obj.clear_scene()
+    print("Finished clear_scene()")
 
     # Load building env class.
     self.buildings = []
@@ -1439,7 +1443,7 @@ class BuildingMultiplexer():
 
   def sample_building(self, rng):
     if self.num_buildings == 1:
-      building_id = rng.choice(range(len(self.building_names)))
+      building_id = rng.choice(list(range(len(self.building_names))))
     else:
       building_id = rng.choice(self.num_buildings,
                                p=self.building_sampling_weights)
@@ -1451,7 +1455,7 @@ class BuildingMultiplexer():
   def sample_env(self, rngs):
     rng = rngs[0];
     if self.num_buildings == 1:
-      building_id = rng.choice(range(len(self.building_names)))
+      building_id = rng.choice(list(range(len(self.building_names))))
     else:
       building_id = rng.choice(self.num_buildings,
                                p=self.building_sampling_weights)
@@ -1459,7 +1463,7 @@ class BuildingMultiplexer():
 
   def pre(self, inputs):
     return self.buildings[self._building_id].pre(inputs)
-  
+
   def __del__(self):
     self.r_obj.clear_scene()
     logging.error('Clearing scene.')

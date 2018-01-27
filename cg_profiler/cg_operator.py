@@ -21,11 +21,19 @@ class Operator:
 
         for input_tensor in tf_repr.inputs:
             tensor_name = input_tensor.name
-            self.input_tensor_shape.append(shape_dict[tensor_name])
+            t_shape = shape_dict[tensor_name]
+            if isinstance(t_shape, list):
+                self.input_tensor_shape.append(t_shape)
+            else:
+                self.input_tensor_shape.append(self._tolist(t_shape))
 
         for output_tensor in tf_repr.outputs:
             tensor_name = output_tensor.name
-            self.output_tensor_shape.append(shape_dict[tensor_name])
+            t_shape = shape_dict[tensor_name]
+            if isinstance(t_shape, list):
+                self.input_tensor_shape.append(t_shape)
+            else:
+                self.output_tensor_shape.append(self._tolist(t_shape))
 
         self.is_aid_op = self._is_framework_aid_op()
 
@@ -34,6 +42,15 @@ class Operator:
         self.parallelism = self._calculate_parallelism(tf_repr)
 
         return
+
+    def _tolist(self, t_shape):
+        rtval = []
+        for i in t_shape.as_list():
+            if i is None:
+                rtval.append(int(1))
+            else:
+                rtval.append(i)
+        return rtval
 
     def _is_framework_aid_op(self):
         aid_op_set = {'VariableV2', 'Identity', 'Squeeze', 'Const',
@@ -62,7 +79,8 @@ class Operator:
                         'MaxPool', 'AvgPool', 'ArgMin', 'OneHot', 'Less',
                         'LoopCond', 'NextIteration', 'Minimum', 'Maximum',
                         'Range', 'ArgMax', 'Exp', 'Log', 'ReduceJoin',
-                        'Pack'}
+                        'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'AddN',
+                        'Fill', 'ResizeBilinear', 'Conv2DBackpropInput'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits',
                           'Softmax'}
@@ -117,7 +135,8 @@ class Operator:
                               'OneHot', 'Less', 'LoopCond', 'NextIteration',
                               'Minimum', 'Maximum', 'Range', 'Exp', 'Log',
                               'HashTableV2', 'LookupTableFindV2', 'StridedSlice',
-                              'Pack'}
+                              'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
+                              'ResizeBilinear'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'ReduceJoin'}
 
@@ -132,11 +151,15 @@ class Operator:
         if self.op_type == 'MatMul':
             return self._cal_comp_matmul(tf_opr)
 
-        if self.op_type == 'Conv2D':
+        if (self.op_type == 'Conv2D'
+                or self.op_type == 'Conv2DBackpropInput'):
             return self._cal_comp_conv2d(tf_opr)
 
         if self.op_type == 'FusedBatchNorm':
             return self._cal_comp_fusedbatchnorm(tf_opr)
+
+        if self.op_type == 'AddN':
+            return self._cal_comp_addn(tf_opr)
 
         if self.op_type in softmax_op_set:
             return self._cal_comp_softmax(tf_opr)
@@ -164,7 +187,9 @@ class Operator:
                               'FusedBatchNorm', 'OneHot', 'Less', 'LoopCond',
                               'NextIteration', 'Minimum', 'Maximum', 'Range',
                               'Exp', 'Log', 'ReduceJoin', 'HashTableV2',
-                              'LookupTableFindV2', 'StridedSlice', 'Pack'}
+                              'LookupTableFindV2', 'StridedSlice', 'Pack',
+                              'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
+                              'ResizeBilinear'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax'}
 
@@ -179,8 +204,12 @@ class Operator:
         if self.op_type == 'MatMul':
             return self._cal_par_matmul(tf_opr)
 
-        if self.op_type == 'Conv2D':
+        if (self.op_type == 'Conv2D'
+                or self.op_type == 'Conv2DBackpropInput'):
             return self._cal_par_conv2d(tf_opr)
+
+        if self.op_type == 'AddN':
+            return self._cal_par_addn(tf_opr)
 
         if self.op_type in softmax_op_set:
             return self._cal_par_softmax(tf_opr)
@@ -227,9 +256,9 @@ class Operator:
 
     def _extract_conv2d_params(self, tf_opr):
         conv_args = {}
-        assert len(self.input_tensor_shape) == 2
-        assert len(self.output_tensor_shape) == 1
-        assert len(self.input_tensor_shape[0]) == 4
+        #assert len(self.input_tensor_shape) == 2
+        #assert len(self.output_tensor_shape) == 1
+        #assert len(self.input_tensor_shape[0]) == 4
         assert len(self.input_tensor_shape[1]) == 4
         assert len(self.output_tensor_shape[0]) == 4
 
@@ -247,8 +276,14 @@ class Operator:
 
         conv_args['FH'] = self.input_tensor_shape[1][0]
         conv_args['FW'] = self.input_tensor_shape[1][1]
-        conv_args['IC'] = self.input_tensor_shape[1][2]
-        assert conv_args['OC'] == self.input_tensor_shape[1][3]
+        #conv_args['IC'] = self.input_tensor_shape[1][2]
+        #assert conv_args['OC'] == self.input_tensor_shape[1][3]
+        if conv_args['OC'] == self.input_tensor_shape[1][3]:
+            conv_args['IC'] = self.input_tensor_shape[1][2]
+        elif conv_args['OC'] == self.input_tensor_shape[1][2]:
+            conv_args['IC'] = self.input_tensor_shape[1][3]
+        else:
+            raise NotImplementedError
 
         conv_args['IN'] = conv_args['ON']
 
@@ -284,6 +319,11 @@ class Operator:
         tmp_list = self.input_tensor_shape[0]
         return 3 * np.prod(np.array(tmp_list))
 
+    def _cal_comp_addn(self, tf_opr):
+        tmp_list = self.input_tensor_shape[0]
+        n = max(1, len(self.input_tensor_shape) - 1)
+        return n * np.prod(np.array(tmp_list))
+
     def _cal_par_matmul(self, tf_opr):
         M, N, K = self._extract_m_n_k()
         K = max(K, 2.0)
@@ -317,6 +357,11 @@ class Operator:
     def _cal_par_softmax(self, tf_opr):
         K = max(2.0, self.input_tensor_shape[0][1])
         par_ratio = 2.0 / 3.0 + (1.0 / (3.0 * math.ceil(math.log2(K))))
+        return par_ratio
+
+    def _cal_par_addn(self, tf_opr):
+        K = max(2.0, len(self.input_tensor_shape))
+        par_ratio = (1.0 / math.ceil(math.log2(K)))
         return par_ratio
 
     def _cal_mem_switch(self):

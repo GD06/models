@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 """BrainF**k interpreter.
 
@@ -47,11 +47,11 @@ class LookAheadIterator(object):
 
   def _preload_next(self):
     try:
-      self._current_element = self._it.next()
+      self._current_element = next(self._it)
     except StopIteration:
       self._done = True
 
-  def next(self):
+  def __next__(self):
     if self._done:
       raise StopIteration
     element = self._current_element
