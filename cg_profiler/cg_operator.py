@@ -22,18 +22,18 @@ class Operator:
         for input_tensor in tf_repr.inputs:
             tensor_name = input_tensor.name
             t_shape = shape_dict[tensor_name]
-            if isinstance(t_shape, list):
-                self.input_tensor_shape.append(t_shape)
-            else:
+            if isinstance(t_shape, tf.TensorShape):
                 self.input_tensor_shape.append(self._tolist(t_shape))
+            else:
+                self.input_tensor_shape.append(t_shape)
 
         for output_tensor in tf_repr.outputs:
             tensor_name = output_tensor.name
             t_shape = shape_dict[tensor_name]
-            if isinstance(t_shape, list):
-                self.input_tensor_shape.append(t_shape)
-            else:
+            if isinstance(t_shape, tf.TensorShape):
                 self.output_tensor_shape.append(self._tolist(t_shape))
+            else:
+                self.output_tensor_shape.append(t_shape)
 
         self.is_aid_op = self._is_framework_aid_op()
 
@@ -80,7 +80,8 @@ class Operator:
                         'LoopCond', 'NextIteration', 'Minimum', 'Maximum',
                         'Range', 'ArgMax', 'Exp', 'Log', 'ReduceJoin',
                         'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'AddN',
-                        'Fill', 'ResizeBilinear', 'Conv2DBackpropInput'}
+                        'Fill', 'ResizeBilinear', 'Conv2DBackpropInput',
+                        'DepthToSpace', 'SpaceToDepth'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits',
                           'Softmax'}
@@ -136,7 +137,7 @@ class Operator:
                               'Minimum', 'Maximum', 'Range', 'Exp', 'Log',
                               'HashTableV2', 'LookupTableFindV2', 'StridedSlice',
                               'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
-                              'ResizeBilinear'}
+                              'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'ReduceJoin'}
 
@@ -189,7 +190,7 @@ class Operator:
                               'Exp', 'Log', 'ReduceJoin', 'HashTableV2',
                               'LookupTableFindV2', 'StridedSlice', 'Pack',
                               'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
-                              'ResizeBilinear'}
+                              'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax'}
 

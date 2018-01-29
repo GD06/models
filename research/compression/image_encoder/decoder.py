@@ -27,6 +27,8 @@ import os
 import numpy as np
 import tensorflow as tf
 
+from cg_profiler.cg_graph import CompGraph
+
 tf.flags.DEFINE_string('input_codes', None, 'Location of binary code file.')
 tf.flags.DEFINE_integer('iteration', -1, 'The max quality level of '
                         'the images to output. Use -1 to infer from loaded '
@@ -71,7 +73,7 @@ def main(_):
     return
 
   contents = ''
-  with tf.gfile.FastGFile(FLAGS.input_codes, 'r') as code_file:
+  with tf.gfile.FastGFile(FLAGS.input_codes, 'rb') as code_file:
     contents = code_file.read()
     loaded_codes = np.load(io.BytesIO(contents))
     assert ['codes', 'shape'] not in loaded_codes.files
@@ -110,7 +112,23 @@ def main(_):
                                                   numpy_codes)}
 
   with tf.Session(graph=graph) as sess:
-    results = sess.run(outputs, feed_dict=feed_dict)
+
+    options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+    run_metadata = tf.RunMetadata()
+
+    results = sess.run(outputs, feed_dict=feed_dict, options=options,
+                       run_metadata=run_metadata)
+    cg = CompGraph('image_decoder', run_metadata, tf.get_default_graph())
+
+    cg_tensor_dict = cg.get_tensors()
+    cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    cg_sorted_items = []
+    for cg_key in cg_sorted_keys:
+      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+    cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
+    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                   'image_decoder.pickle')
 
     for index, result in enumerate(results):
       img = np.uint8(np.clip(result + 0.5, 0, 255))

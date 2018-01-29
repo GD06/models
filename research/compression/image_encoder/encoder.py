@@ -29,6 +29,8 @@ import os
 import numpy as np
 import tensorflow as tf
 
+from cg_profiler.cg_graph import CompGraph
+
 tf.flags.DEFINE_string('input_image', None, 'Location of input image. We rely '
                        'on tf.image to decode the image, so only PNG and JPEG '
                        'formats are currently supported.')
@@ -59,7 +61,7 @@ def main(_):
     print('\n--iteration must be between 0 and 15 inclusive.\n')
     return
 
-  with tf.gfile.FastGFile(FLAGS.input_image) as input_image:
+  with tf.gfile.FastGFile(FLAGS.input_image, mode='rb') as input_image:
     input_image_str = input_image.read()
 
   with tf.Graph().as_default() as graph:
@@ -86,7 +88,23 @@ def main(_):
   with tf.Session(graph=graph) as sess:
     img_array = sess.run(decoded_image, feed_dict={input_image:
                                                    input_image_str})
-    results = sess.run(outputs, feed_dict={input_tensor: img_array})
+
+    options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+    run_metadata = tf.RunMetadata()
+
+    results = sess.run(outputs, feed_dict={input_tensor: img_array},
+                       options=options, run_metadata=run_metadata)
+    cg = CompGraph('image_encoder', run_metadata, tf.get_default_graph())
+
+    cg_tensor_dict = cg.get_tensors()
+    cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    cg_sorted_items = []
+    for cg_key in cg_sorted_keys:
+      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+    cg_sorted_shape = sess.run(cg_sorted_items, feed_dict={input_tensor: img_array})
+    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                   'image_encoder.pickle')
 
   results = results[0:FLAGS.iteration + 1]
   int_codes = np.asarray([x.astype(np.int8) for x in results])
