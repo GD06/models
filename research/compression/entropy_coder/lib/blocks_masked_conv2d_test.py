@@ -15,13 +15,13 @@
 
 """Tests of the 2D masked convolution blocks."""
 
-from __future__ import division
-from __future__ import unicode_literals
+
+
 
 import numpy as np
 import tensorflow as tf
 
-import blocks_masked_conv2d
+from . import blocks_masked_conv2d
 
 
 class MaskedConv2DTest(tf.test.TestCase):
@@ -179,8 +179,8 @@ class MaskedConv2DTest(tf.test.TestCase):
 
     x_feed = - np.ones(input_shape, dtype=float)
     y_expected = np.ones(output_shape, dtype=float)
-    for i in xrange(input_shape[1]):
-      for j in xrange(input_shape[2]):
+    for i in range(input_shape[1]):
+      for j in range(input_shape[2]):
         x_feed[0, i, j, 0] = 10 * (j + 1) + i
         v = 0
         ki_start = max(i - kernel_size // 2, 0)

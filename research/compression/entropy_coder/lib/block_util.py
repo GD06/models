@@ -15,8 +15,8 @@
 
 """Utility functions for blocks."""
 
-from __future__ import division
-from __future__ import unicode_literals
+
+
 
 import math
 
@@ -39,7 +39,7 @@ class RsqrtInitializer(object):
         1.0 / sqrt(product(shape[dims]))
       **kwargs: Extra keyword arguments to pass to tf.truncated_normal.
     """
-    if isinstance(dims, (int, long)):
+    if isinstance(dims, int):
       self._dims = [dims]
     else:
       self._dims = dims
@@ -73,7 +73,7 @@ class RectifierInitializer(object):
         sqrt(scale / product(shape[dims])).
       **kwargs: Extra keyword arguments to pass to tf.truncated_normal.
     """
-    if isinstance(dims, (int, long)):
+    if isinstance(dims, int):
       self._dims = [dims]
     else:
       self._dims = dims

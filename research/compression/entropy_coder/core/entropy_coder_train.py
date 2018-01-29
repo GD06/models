@@ -84,7 +84,7 @@ def train():
       first_code.features.feature['code_shape'].int64_list.value[1])
   max_bit_depth = (
       first_code.features.feature['code_shape'].int64_list.value[2])
-  print('Maximum code depth: {}'.format(max_bit_depth))
+  print(('Maximum code depth: {}'.format(max_bit_depth)))
 
   with tf.Graph().as_default():
     ps_ops = ["Variable", "VariableV2", "AutoReloadVariable", "VarHandleOp"]
@@ -94,8 +94,8 @@ def train():
           input_config=input_config,
           batch_size=batch_size)
       if input_config.unique_code_size:
-        print('Input code size: {} x {}'.format(first_code_height,
-                                                first_code_width))
+        print(('Input code size: {} x {}'.format(first_code_height,
+                                                first_code_width)))
         codes.set_shape(
             [batch_size, first_code_height, first_code_width, max_bit_depth])
       else:
@@ -144,7 +144,7 @@ def train():
       sv.StartQueueRunners(sess)
 
       step = sess.run(global_step)
-      print('Trainer initial step: {}.'.format(step))
+      print(('Trainer initial step: {}.'.format(step)))
 
       # Once everything has been setup properly, save the configs.
       if is_chief:
@@ -171,7 +171,7 @@ def train():
               'code_length': model.average_code_length
           }
           np_tensors = sess.run(tf_tensors, feed_dict=feed_dict)
-          print np_tensors['code_length']
+          print(np_tensors['code_length'])
 
       sv.Stop()
 

@@ -10,8 +10,6 @@ py_binary(
         # google3 file dep,
         # tensorflow dep,
     ],
-    srcs_version = "PY3",
-    default_python_version = "PY3",
 )
 
 py_binary(
@@ -101,7 +99,7 @@ py_test(
 # Runtime
 # ==============================================================================
 py_runtime(
-    name = "python3-3.5",
+    name = "python3",
     files = [],
     interpreter_path = "/usr/bin/python3",
 )

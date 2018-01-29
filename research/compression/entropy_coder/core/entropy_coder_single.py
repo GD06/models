@@ -23,6 +23,8 @@ import tensorflow as tf
 
 import config_helper
 
+from cg_profiler.cg_graph import CompGraph
+
 # pylint: disable=unused-import
 from entropy_coder.all_models import all_models
 # pylint: enable=unused-import
@@ -58,7 +60,7 @@ def main(_):
   #iteration = FLAGS.iteration
 
   if not tf.gfile.Exists(FLAGS.input_codes):
-    print '\nInput codes not found.\n'
+    print('\nInput codes not found.\n')
     return
 
   with tf.gfile.FastGFile(FLAGS.input_codes, 'rb') as code_file:
@@ -106,10 +108,26 @@ def main(_):
           'code_length': model.average_code_length
       }
       feed_dict = {codes: numpy_codes}
-      np_tensors = sess.run(tf_tensors, feed_dict=feed_dict)
 
-      print('Additional compression ratio: {}'.format(
-          np_tensors['code_length']))
+      options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+      run_metadata = tf.RunMetadata()
+
+      np_tensors = sess.run(tf_tensors, feed_dict=feed_dict, options=options,
+                            run_metadata=run_metadata)
+      cg = CompGraph('entropy_coder', run_metadata, tf.get_default_graph())
+
+      cg_tensor_dict = cg.get_tensors()
+      cg_sorted_keys = sorted(cg_tensor_dict.keys())
+      cg_sorted_items = []
+      for cg_key in cg_sorted_keys:
+        cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+      cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
+      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                     'entropy_coder.pickle')
+
+      print(('Additional compression ratio: {}'.format(
+          np_tensors['code_length'])))
 
 
 if __name__ == '__main__':

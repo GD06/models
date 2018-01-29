@@ -14,14 +14,14 @@
 # ==============================================================================
 
 """Tests for LSTM tensorflow blocks."""
-from __future__ import division
+
 
 import numpy as np
 import tensorflow as tf
 
-import block_base
-import blocks_std
-import blocks_lstm
+from . import block_base
+from . import blocks_std
+from . import blocks_lstm
 
 
 class BlocksLSTMTest(tf.test.TestCase):

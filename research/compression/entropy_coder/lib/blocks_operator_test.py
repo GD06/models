@@ -18,8 +18,8 @@
 import numpy as np
 import tensorflow as tf
 
-import block_base
-import blocks_operator
+from . import block_base
+from . import blocks_operator
 
 
 class AddOneBlock(block_base.BlockBase):

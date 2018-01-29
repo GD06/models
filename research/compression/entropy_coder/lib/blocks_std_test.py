@@ -15,8 +15,8 @@
 
 """Tests for basic tensorflow blocks_std."""
 
-from __future__ import division
-from __future__ import unicode_literals
+
+
 
 import math
 import os
@@ -24,7 +24,7 @@ import os
 import numpy as np
 import tensorflow as tf
 
-import blocks_std
+from . import blocks_std
 
 
 def _NumpyConv2D(x, f, strides, padding, rate=1):
@@ -71,9 +71,9 @@ def _NumpyConv2D(x, f, strides, padding, rate=1):
   # The output at pixel location (i, j) is the result of linear transformation
   # applied to the window whose top-left corner is at
   # (i * row_stride, j * col_stride).
-  for i in xrange(x_window.shape[1]):
+  for i in range(x_window.shape[1]):
     k = i * strides[1]
-    for j in xrange(x_window.shape[2]):
+    for j in range(x_window.shape[2]):
       l = j * strides[2]
       x_window[:, i, j, :] = x[:,
                                k:(k + f.shape[0]),

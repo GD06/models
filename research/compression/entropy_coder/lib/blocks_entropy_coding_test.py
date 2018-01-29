@@ -15,15 +15,15 @@
 
 """Tests for basic tensorflow blocks_entropy_coding."""
 
-from __future__ import division
-from __future__ import unicode_literals
+
+
 
 import math
 
 import numpy as np
 import tensorflow as tf
 
-import blocks_entropy_coding
+from . import blocks_entropy_coding
 
 
 class BlocksEntropyCodingTest(tf.test.TestCase):

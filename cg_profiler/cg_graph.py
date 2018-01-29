@@ -52,6 +52,7 @@ class CompGraph:
             if 'dur' in op_trace.keys():
                 try:
                     op = Operator(op_trace, self.tf_graph, self.model_name, shape_dict)
+                    op_list.append(op)
                 except KeyError as exp:
                     # This part should be redirected to the error log
                     print(repr(exp))

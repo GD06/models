@@ -81,7 +81,7 @@ class Operator:
                         'Range', 'ArgMax', 'Exp', 'Log', 'ReduceJoin',
                         'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'AddN',
                         'Fill', 'ResizeBilinear', 'Conv2DBackpropInput',
-                        'DepthToSpace', 'SpaceToDepth'}
+                        'DepthToSpace', 'SpaceToDepth', 'Mean'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits',
                           'Softmax'}
@@ -139,7 +139,7 @@ class Operator:
                               'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
                               'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth'}
 
-        reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'ReduceJoin'}
+        reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'ReduceJoin', 'Mean'}
 
         pooling_op_set = {'MaxPool', 'AvgPool'}
 
@@ -192,7 +192,7 @@ class Operator:
                               'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
                               'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth'}
 
-        reduce_op_set = {'Sum', 'ArgMin', 'ArgMax'}
+        reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean'}
 
         pooling_op_set = {'MaxPool', 'AvgPool'}
 

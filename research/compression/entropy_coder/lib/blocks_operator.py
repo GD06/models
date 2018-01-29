@@ -17,7 +17,7 @@
 
 import tensorflow as tf
 
-import block_base
+from . import block_base
 
 # pylint: disable=not-callable
 
