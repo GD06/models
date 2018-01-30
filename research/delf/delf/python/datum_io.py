@@ -21,9 +21,9 @@ Please refer to datum.proto for details.
 Support read and write of DatumProto from/to numpy array and file.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 from delf import datum_pb2
 import numpy as np
@@ -93,7 +93,7 @@ def ReadFromFile(file_path):
   Returns:
     data: Numpy array.
   """
-  with tf.gfile.FastGFile(file_path, 'r') as f:
+  with tf.gfile.FastGFile(file_path, 'rb') as f:
     return ParseFromString(f.read())
 
 

@@ -19,9 +19,9 @@ The images must be in JPG format. The program checks if descriptors already
 exist, and skips computation for those.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import argparse
 from google.protobuf import text_format
@@ -72,7 +72,7 @@ def main(unused_argv):
 
   # Parse DelfConfig proto.
   config = delf_config_pb2.DelfConfig()
-  with tf.gfile.FastGFile(cmd_args.config_path, 'r') as f:
+  with tf.gfile.FastGFile(cmd_args.config_path, 'rb') as f:
     text_format.Merge(f.read(), config)
 
   # Create output directory if necessary.

@@ -21,9 +21,9 @@ geometric verification using RANSAC.
 The DELF features can be extracted using the extract_features.py script.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import argparse
 from delf import feature_io

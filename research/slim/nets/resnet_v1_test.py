@@ -14,9 +14,9 @@
 # ==============================================================================
 """Tests for slim.nets.resnet_v1."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import numpy as np
 import tensorflow as tf
@@ -309,7 +309,7 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
       expected.append('resnet/block%d' % block)
     expected.extend(['global_pool', 'resnet/logits', 'resnet/spatial_squeeze',
                      'predictions'])
-    self.assertItemsEqual(end_points.keys(), expected)
+    self.assertItemsEqual(list(end_points.keys()), expected)
 
   def testClassificationShapes(self):
     global_pool = True

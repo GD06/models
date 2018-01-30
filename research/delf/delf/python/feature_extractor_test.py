@@ -15,9 +15,9 @@
 
 """Tests for DELF feature extractor."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 from delf import feature_extractor
 import numpy as np

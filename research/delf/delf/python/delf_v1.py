@@ -22,9 +22,9 @@ Please refer to the README.md file for detailed explanations on using the DELF
 model.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 from nets import resnet_v1
 

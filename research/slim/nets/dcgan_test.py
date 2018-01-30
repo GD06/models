@@ -14,9 +14,9 @@
 # ==============================================================================
 """Tests for dcgan."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import tensorflow as tf
 from nets import dcgan
@@ -36,7 +36,7 @@ class DCGANTest(tf.test.TestCase):
     tf.set_random_seed(1234)
     # Check graph construction for a number of image size/depths and batch
     # sizes.
-    for i, batch_size in zip(xrange(3, 7), xrange(3, 8)):
+    for i, batch_size in zip(list(range(3, 7)), list(range(3, 8))):
       tf.reset_default_graph()
       final_size = 2 ** i
       noise = tf.random_normal([batch_size, 64])
@@ -48,7 +48,7 @@ class DCGANTest(tf.test.TestCase):
       self.assertAllEqual([batch_size, final_size, final_size, 3],
                           image.shape.as_list())
 
-      expected_names = ['deconv%i' % j for j in xrange(1, i)] + ['logits']
+      expected_names = ['deconv%i' % j for j in range(1, i)] + ['logits']
       self.assertSetEqual(set(expected_names), set(end_points.keys()))
 
       # Check layer depths.
@@ -62,10 +62,10 @@ class DCGANTest(tf.test.TestCase):
       dcgan.generator(wrong_dim_input)
 
     correct_input = tf.zeros([3, 2])
-    with self.assertRaisesRegexp(ValueError, 'must be a power of 2'):
+    with self.assertRaisesRegex(ValueError, 'must be a power of 2'):
       dcgan.generator(correct_input, final_size=30)
 
-    with self.assertRaisesRegexp(ValueError, 'must be greater than 8'):
+    with self.assertRaisesRegex(ValueError, 'must be greater than 8'):
       dcgan.generator(correct_input, final_size=4)
 
   def test_discriminator_run(self):
@@ -78,7 +78,7 @@ class DCGANTest(tf.test.TestCase):
   def test_discriminator_graph(self):
     # Check graph construction for a number of image size/depths and batch
     # sizes.
-    for i, batch_size in zip(xrange(1, 6), xrange(3, 8)):
+    for i, batch_size in zip(list(range(1, 6)), list(range(3, 8))):
       tf.reset_default_graph()
       img_w = 2 ** i
       image = tf.random_uniform([batch_size, img_w, img_w, 3], -1, 1)
@@ -88,7 +88,7 @@ class DCGANTest(tf.test.TestCase):
 
       self.assertAllEqual([batch_size, 1], output.get_shape().as_list())
 
-      expected_names = ['conv%i' % j for j in xrange(1, i+1)] + ['logits']
+      expected_names = ['conv%i' % j for j in range(1, i+1)] + ['logits']
       self.assertSetEqual(set(expected_names), set(end_points.keys()))
 
       # Check layer depths.
@@ -106,11 +106,11 @@ class DCGANTest(tf.test.TestCase):
       dcgan.discriminator(spatially_undefined_shape)
 
     not_square = tf.zeros([5, 32, 16, 3])
-    with self.assertRaisesRegexp(ValueError, 'not have equal width and height'):
+    with self.assertRaisesRegex(ValueError, 'not have equal width and height'):
       dcgan.discriminator(not_square)
 
     not_power_2 = tf.zeros([5, 30, 30, 3])
-    with self.assertRaisesRegexp(ValueError, 'not a power of 2'):
+    with self.assertRaisesRegex(ValueError, 'not a power of 2'):
       dcgan.discriminator(not_power_2)
 
 

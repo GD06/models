@@ -14,9 +14,9 @@
 # ==============================================================================
 """DELF feature extractor.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 from delf import datum_io
 from delf import delf_v1

@@ -309,7 +309,7 @@ def convert_to_graph_tool(G):
   # d = {key: value for (key, value) in zip(nodes_list, nodes_id)}
   d = dict(zip(nodes_list, nodes_id))
 
-  for src, dst, data in G.edges_iter(data=True):
+  for src, dst, data in G.edges(data=True):
     e = gtG.add_edge(d[src], d[dst])
     gtG.ep['action'][e] = data['action']
   nodes_to_id = d
