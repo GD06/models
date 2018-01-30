@@ -32,6 +32,8 @@ import tensorflow as tf
 from tensorflow.python.platform import app
 import time
 
+from cg_profiler.cg_graph import CompGraph
+
 from delf import delf_config_pb2
 from delf import feature_extractor
 from delf import feature_io
@@ -137,11 +139,7 @@ def main(unused_argv):
           tf.logging.info('Skipping %s', image_paths[i])
           continue
 
-        # Extract and save features.
-        (locations_out, descriptors_out, feature_scales_out,
-         attention_out) = sess.run(
-             [locations, descriptors, feature_scales, attention],
-             feed_dict={
+        feed_dict = {
                  input_image:
                      im,
                  input_score_threshold:
@@ -150,7 +148,27 @@ def main(unused_argv):
                      list(config.image_scales),
                  input_max_feature_num:
                      config.delf_local_config.max_feature_num
-             })
+             }
+
+        options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+        run_metadata = tf.RunMetadata()
+
+        # Extract and save features.
+        (locations_out, descriptors_out, feature_scales_out,
+         attention_out) = sess.run(
+             [locations, descriptors, feature_scales, attention],
+            feed_dict=feed_dict, options=options, run_metadata=run_metadata)
+        cg = CompGraph('delf_extract_features', run_metadata, tf.get_default_graph())
+
+        cg_tensor_dict = cg.get_tensors()
+        cg_sorted_keys = sorted(cg_tensor_dict.keys())
+        cg_sorted_items = []
+        for cg_key in cg_sorted_keys:
+          cg_sorted_items.append(cg_tensor_dict[cg_key].shape)
+
+        #cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
+        cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_items)),
+                       'delf_extract_features.pickle')
 
         serialized_desc = feature_io.WriteToFile(
             out_desc_fullpath, locations_out, feature_scales_out,

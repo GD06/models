@@ -5,7 +5,7 @@ import re
 
 class Operator:
 
-    def __init__(self, op_trace, tf_graph, model_name, shape_dict):
+    def __init__(self, op_trace, tf_graph, model_name):
 
         self.elapsed_time = str(op_trace['dur'])
 
@@ -14,13 +14,27 @@ class Operator:
         self.op_type = str(op_args['op'])
         self.model_name = model_name
 
+        self.is_aid_op = self._is_framework_aid_op()
+
+        return
+
+    def analysis(self, shape_dict, tf_graph):
+
         tf_repr = tf_graph.get_operation_by_name(self.op_name)
+
+        self.input_tensor_name = []
+        self.output_tensor_name = []
 
         self.input_tensor_shape = []
         self.output_tensor_shape = []
 
         for input_tensor in tf_repr.inputs:
+
             tensor_name = input_tensor.name
+            self.input_tensor_name.append(tensor_name)
+            if self.is_aid_op:
+                continue
+
             t_shape = shape_dict[tensor_name]
             if isinstance(t_shape, tf.TensorShape):
                 self.input_tensor_shape.append(self._tolist(t_shape))
@@ -28,14 +42,17 @@ class Operator:
                 self.input_tensor_shape.append(t_shape)
 
         for output_tensor in tf_repr.outputs:
+
             tensor_name = output_tensor.name
+            self.output_tensor_name.append(tensor_name)
+            if self.is_aid_op:
+                continue
+
             t_shape = shape_dict[tensor_name]
             if isinstance(t_shape, tf.TensorShape):
                 self.output_tensor_shape.append(self._tolist(t_shape))
             else:
                 self.output_tensor_shape.append(t_shape)
-
-        self.is_aid_op = self._is_framework_aid_op()
 
         self.mem_trans = self._calculate_mem_trans(tf_repr)
         self.comp_instrs = self._calculate_comp_instrs(tf_repr)
@@ -58,7 +75,8 @@ class Operator:
                       'FIFOQueueV2', 'Assert', 'BarrierTakeMany',
                       'QueueDequeueManyV2', 'Merge', 'BarrierInsertMany',
                       'NoOp', 'ExpandDims', 'RandomUniformInt',
-                      'RandomStandardNormal', 'ShapeN', 'Enter', 'Exit'}
+                      'RandomStandardNormal', 'ShapeN', 'Enter', 'Exit',
+                      'Size', 'NonMaxSuppressionV2'}
 
         tensor_array_matcher = re.compile('TensorArray')
         if tensor_array_matcher.match(self.op_type) is not None:
@@ -66,6 +84,7 @@ class Operator:
 
         if self.op_type in aid_op_set:
             return True
+
         return False
 
     def _calculate_mem_trans(self, tf_opr):
@@ -81,7 +100,8 @@ class Operator:
                         'Range', 'ArgMax', 'Exp', 'Log', 'ReduceJoin',
                         'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'AddN',
                         'Fill', 'ResizeBilinear', 'Conv2DBackpropInput',
-                        'DepthToSpace', 'SpaceToDepth', 'Mean'}
+                        'DepthToSpace', 'SpaceToDepth', 'Mean', 'Round',
+                        'Softplus', 'GatherV2', 'Square', 'Rsqrt'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits',
                           'Softmax'}
@@ -137,7 +157,8 @@ class Operator:
                               'Minimum', 'Maximum', 'Range', 'Exp', 'Log',
                               'HashTableV2', 'LookupTableFindV2', 'StridedSlice',
                               'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
-                              'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth'}
+                              'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth',
+                              'Round', 'Softplus', 'GatherV2', 'Square', 'Rsqrt'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'ReduceJoin', 'Mean'}
 
@@ -190,7 +211,8 @@ class Operator:
                               'Exp', 'Log', 'ReduceJoin', 'HashTableV2',
                               'LookupTableFindV2', 'StridedSlice', 'Pack',
                               'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
-                              'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth'}
+                              'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth',
+                              'Round', 'Softplus', 'GatherV2', 'Square', 'Rsqrt'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean'}
 

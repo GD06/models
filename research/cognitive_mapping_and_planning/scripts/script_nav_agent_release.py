@@ -44,6 +44,14 @@ import time
 import cProfile
 import platform
 
+tmp_path = [os.path.join(os.path.dirname(__file__), '../')]
+for each_path in sys.path:
+  tmp_path.append(each_path)
+sys.path = tmp_path
+
+print(sys.path)
+import datasets
+print(datasets.__file__)
 
 import tensorflow as tf
 from tensorflow.contrib import slim
