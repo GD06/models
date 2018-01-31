@@ -14,15 +14,17 @@
 # ==============================================================================
 """Evaluates a TFGAN trained CIFAR model."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import tensorflow as tf
 
 import data_provider
 import networks
 import util
+
+import os
 
 
 flags = tf.flags
@@ -65,6 +67,14 @@ flags.DEFINE_integer('max_number_of_evaluations', None,
 
 
 def main(_, run_eval_loop=True):
+
+  if FLAGS.conditional_eval:
+    FLAGS.checkpoint_dir = os.path.join(FLAGS.checkpoint_dir, 'conditional')
+  else:
+    FLAGS.checkpoint_dir = os.path.join(FLAGS.checkpoint_dir, 'unconditional')
+
+  print('Checkpoint dir: {}'.format(FLAGS.checkpoint_dir))
+
   # Fetch and generate images to run through Inception.
   with tf.name_scope('inputs'):
     real_data, num_classes = _get_real_data(
@@ -73,27 +83,27 @@ def main(_, run_eval_loop=True):
         FLAGS.num_images_generated, FLAGS.conditional_eval, num_classes)
 
   # Compute Frechet Inception Distance.
-  if FLAGS.eval_frechet_inception_distance:
-    fid = util.get_frechet_inception_distance(
-        real_data, generated_data, FLAGS.num_images_generated,
-        FLAGS.num_inception_images)
-    tf.summary.scalar('frechet_inception_distance', fid)
+  #if FLAGS.eval_frechet_inception_distance:
+  #  fid = util.get_frechet_inception_distance(
+  #      real_data, generated_data, FLAGS.num_images_generated,
+  #      FLAGS.num_inception_images)
+  #  tf.summary.scalar('frechet_inception_distance', fid)
 
   # Compute normal Inception scores.
-  if FLAGS.eval_real_images:
-    inc_score = util.get_inception_scores(
-        real_data, FLAGS.num_images_generated, FLAGS.num_inception_images)
-  else:
-    inc_score = util.get_inception_scores(
-        generated_data, FLAGS.num_images_generated, FLAGS.num_inception_images)
-  tf.summary.scalar('inception_score', inc_score)
+  #if FLAGS.eval_real_images:
+  #  inc_score = util.get_inception_scores(
+  #      real_data, FLAGS.num_images_generated, FLAGS.num_inception_images)
+  #else:
+  #  inc_score = util.get_inception_scores(
+  #      generated_data, FLAGS.num_images_generated, FLAGS.num_inception_images)
+  #tf.summary.scalar('inception_score', inc_score)
 
   # If conditional, display an image grid of difference classes.
-  if FLAGS.conditional_eval and not FLAGS.eval_real_images:
-    reshaped_imgs = util.get_image_grid(
-        generated_data, FLAGS.num_images_generated, num_classes,
-        FLAGS.num_images_per_class)
-    tf.summary.image('generated_data', reshaped_imgs, max_outputs=1)
+  #if FLAGS.conditional_eval and not FLAGS.eval_real_images:
+  #  reshaped_imgs = util.get_image_grid(
+  #      generated_data, FLAGS.num_images_generated, num_classes,
+  #      FLAGS.num_images_per_class)
+  #  tf.summary.image('generated_data', reshaped_imgs, max_outputs=1)
 
   # Create ops that write images to disk.
   image_write_ops = None

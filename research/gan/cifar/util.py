@@ -14,9 +14,9 @@
 # ==============================================================================
 """Convenience functions for training and evaluating a TFGAN CIFAR example."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import tensorflow as tf
 tfgan = tf.contrib.gan
@@ -39,8 +39,8 @@ def get_generator_conditioning(batch_size, num_classes):
   if batch_size % num_classes != 0:
     raise ValueError('`batch_size` %i must be evenly divisible by '
                      '`num_classes` %i.' % (batch_size, num_classes))
-  labels = [lbl for lbl in xrange(num_classes)
-            for _ in xrange(batch_size // num_classes)]
+  labels = [lbl for lbl in range(num_classes)
+            for _ in range(batch_size // num_classes)]
   return tf.one_hot(tf.constant(labels), num_classes)
 
 
@@ -76,8 +76,8 @@ def get_image_grid(images, batch_size, num_classes, num_images_per_class):
 
   # Only get a certain number of images per class.
   num_batches = batch_size // num_classes
-  indices = [i * num_batches + j for i in xrange(num_classes)
-             for j in xrange(num_images_per_class)]
+  indices = [i * num_batches + j for i in range(num_classes)
+             for j in range(num_images_per_class)]
   sampled_images = tf.gather(images, indices)
   return tfgan.eval.image_reshaper(
       sampled_images, num_cols=num_images_per_class)

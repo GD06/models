@@ -26,6 +26,8 @@ import data_provider
 import networks
 import util
 
+from cg_profiler.cg_graph import CompGraph
+
 flags = tf.flags
 FLAGS = flags.FLAGS
 tfgan = tf.contrib.gan
@@ -56,6 +58,15 @@ flags.DEFINE_integer('max_number_of_evaluations', None,
                      'Number of times to run evaluation. If `None`, run '
                      'forever.')
 
+def restore_from_checkpoint(sess, saver):
+
+  ckpt = tf.train.get_checkpoint_state(FLAGS.checkpoint_dir)
+  if not ckpt or not ckpt.model_checkpoint_path:
+    tf.logging.info('No checkpoint found at %s', FLAGS.checkpoint_dir)
+    return False
+
+  saver.restore(sess, ckpt.model_checkpoint_path)
+  return True
 
 def main(_, run_eval_loop=True):
   # Fetch real images.
@@ -73,11 +84,33 @@ def main(_, run_eval_loop=True):
     with tf.variable_scope('Generator'):
       images = networks.unconditional_generator(
           tf.random_normal([FLAGS.num_images_generated, FLAGS.noise_dims]))
-    tf.summary.scalar('MNIST_Frechet_distance',
-                      util.mnist_frechet_distance(
-                          real_images, images, FLAGS.classifier_filename))
-    tf.summary.scalar('MNIST_Classifier_score',
-                      util.mnist_score(images, FLAGS.classifier_filename))
+
+      sess = tf.Session()
+      saver = tf.train.Saver()
+      if not restore_from_checkpoint(sess, saver):
+        raise NotImplementedError
+
+      options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+      run_metadata = tf.RunMetadata()
+      sess.run(images, options=options, run_metadata=run_metadata)
+      cg = CompGraph('gan_mnist', run_metadata, tf.get_default_graph())
+
+      cg_tensor_dict = cg.get_tensors()
+      cg_sorted_keys = sorted(cg_tensor_dict.keys())
+      cg_sorted_items = []
+      for cg_key in cg_sorted_keys:
+        cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+      cg_sorted_shape = sess.run(cg_sorted_items)
+      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                     'gan_mnist.pickle')
+
+      exit(0)
+    #tf.summary.scalar('MNIST_Frechet_distance',
+    #                  util.mnist_frechet_distance(
+    #                      real_images, images, FLAGS.classifier_filename))
+    #tf.summary.scalar('MNIST_Classifier_score',
+    #                  util.mnist_score(images, FLAGS.classifier_filename))
     if FLAGS.num_images_generated >= 100:
       reshaped_images = tfgan.eval.image_reshaper(
           images[:100, ...], num_cols=10)

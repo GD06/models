@@ -14,9 +14,9 @@
 # ==============================================================================
 """Networks for GAN CIFAR example using TFGAN."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import tensorflow as tf
 
@@ -27,7 +27,11 @@ tfgan = tf.contrib.gan
 
 def _last_conv_layer(end_points):
   """"Returns the last convolutional layer from an endpoints dictionary."""
-  conv_list = [k if k[:4] == 'conv' else None for k in end_points.keys()]
+  #conv_list = [k if k[:4] == 'conv' else None for k in list(end_points.keys())]
+  conv_list = []
+  for k in end_points.keys():
+    if k[:4] == 'conv':
+      conv_list.append(k)
   conv_list.sort()
   return end_points[conv_list[-1]]
 

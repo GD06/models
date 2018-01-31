@@ -13,9 +13,9 @@
 # limitations under the License.
 # ==============================================================================
 """Trains a generator on CIFAR data."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 
 import tensorflow as tf
@@ -59,12 +59,12 @@ flags.DEFINE_boolean(
     'If `True`, use sync replicas. Otherwise use async.')
 
 flags.DEFINE_integer(
-    'worker_replicas', 10,
+    'worker_replicas', 1,
     'The number of gradients to collect before updating params. Only used '
     'with sync replicas.')
 
 flags.DEFINE_integer(
-    'backup_workers', 1,
+    'backup_workers', 0,
     'Number of workers to be kept as backup in the sync replicas case.')
 
 
