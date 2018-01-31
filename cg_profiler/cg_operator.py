@@ -101,7 +101,8 @@ class Operator:
                         'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'AddN',
                         'Fill', 'ResizeBilinear', 'Conv2DBackpropInput',
                         'DepthToSpace', 'SpaceToDepth', 'Mean', 'Round',
-                        'Softplus', 'GatherV2', 'Square', 'Rsqrt'}
+                        'Softplus', 'GatherV2', 'Square', 'Rsqrt',
+                        'SquaredDifference'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits',
                           'Softmax'}
@@ -147,7 +148,10 @@ class Operator:
 
     def _calculate_comp_instrs(self, tf_opr):
 
-        elementwise_op_set = {'Mul', 'Sub', 'Cast', 'ConcatV2', 'BiasAdd',
+        elementwise_op_set = []
+
+        # 1-type elementwise operator
+        elementwise_op_set.append({'Mul', 'Sub', 'Cast', 'ConcatV2', 'BiasAdd',
                               'Sigmoid', 'Tanh', 'Add', 'Min', 'GreaterEqual',
                               'Max', 'LessEqual', 'Switch', 'LogicalNot',
                               'Greater', 'Where', 'Gather', 'Transpose',
@@ -158,7 +162,13 @@ class Operator:
                               'HashTableV2', 'LookupTableFindV2', 'StridedSlice',
                               'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
                               'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth',
-                              'Round', 'Softplus', 'GatherV2', 'Square', 'Rsqrt'}
+                              'Round', 'GatherV2', 'Square', 'Rsqrt'})
+
+        # 2-type elementwise operator
+        elementwise_op_set.append({})
+
+        # 3-type elementwise operator
+        elementwise_op_set.append({'SquaredDifference', 'Softplus'})
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'ReduceJoin', 'Mean'}
 
@@ -192,8 +202,9 @@ class Operator:
         if self.op_type in reduce_op_set:
             return self._cal_comp_reduce(tf_opr)
 
-        if self.op_type in elementwise_op_set:
-            return self._cal_comp_elementwise(tf_opr)
+        for k in range(len(elementwise_op_set)):
+            if self.op_type in elementwise_op_set[k]:
+                return self._cal_comp_elementwise(tf_opr, k + 1)
 
         print('op_type: ', self.op_type)
         raise NotImplementedError
@@ -212,7 +223,8 @@ class Operator:
                               'LookupTableFindV2', 'StridedSlice', 'Pack',
                               'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
                               'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth',
-                              'Round', 'Softplus', 'GatherV2', 'Square', 'Rsqrt'}
+                              'Round', 'Softplus', 'GatherV2', 'Square', 'Rsqrt',
+                              'SquaredDifference'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean'}
 
@@ -251,9 +263,9 @@ class Operator:
 
 
 
-    def _cal_comp_elementwise(self, tf_opr):
+    def _cal_comp_elementwise(self, tf_opr, k):
         tmp_list = self.output_tensor_shape[0]
-        comp_ops = 2 * np.prod(np.array(tmp_list))
+        comp_ops = k * np.prod(np.array(tmp_list))
         return comp_ops
 
     def _extract_m_n_k(self):

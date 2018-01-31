@@ -25,6 +25,7 @@ import networks
 import util
 
 import os
+from cg_profiler.cg_graph import CompGraph
 
 
 flags = tf.flags
@@ -65,6 +66,15 @@ flags.DEFINE_integer('max_number_of_evaluations', None,
                      'Number of times to run evaluation. If `None`, run '
                      'forever.')
 
+def restore_from_checkpoint(sess, saver):
+
+  ckpt = tf.train.get_checkpoint_state(FLAGS.checkpoint_dir)
+  if not ckpt or not ckpt.model_checkpoint_path:
+    tf.logging.info('No checkpoint found at %s', FLAGS.checkpoint_dir)
+    return False
+
+  saver.restore(sess, ckpt.model_checkpoint_path)
+  return True
 
 def main(_, run_eval_loop=True):
 
@@ -82,6 +92,33 @@ def main(_, run_eval_loop=True):
     generated_data = _get_generated_data(
         FLAGS.num_images_generated, FLAGS.conditional_eval, num_classes)
 
+  model_name = 'gan_cifar_'
+  if FLAGS.conditional_eval:
+    model_name = model_name + 'cond'
+  else:
+    model_name = model_name + 'uncond'
+
+  sess = tf.Session()
+  saver = tf.train.Saver()
+  if not restore_from_checkpoint(sess, saver):
+    raise NotImplementedError
+
+  options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+  run_metadata = tf.RunMetadata()
+  sess.run(generated_data, options=options, run_metadata=run_metadata)
+  cg = CompGraph(model_name, run_metadata, tf.get_default_graph())
+
+  cg_tensor_dict = cg.get_tensors()
+  cg_sorted_keys = sorted(cg_tensor_dict.keys())
+  cg_sorted_items = []
+  for cg_key in cg_sorted_keys:
+    cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+  cg_sorted_shape = sess.run(cg_sorted_items)
+  cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                 '{}.pickle'.format(model_name))
+
+  exit(0)
   # Compute Frechet Inception Distance.
   #if FLAGS.eval_frechet_inception_distance:
   #  fid = util.get_frechet_inception_distance(
