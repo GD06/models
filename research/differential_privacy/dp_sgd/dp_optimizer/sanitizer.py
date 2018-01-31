@@ -20,7 +20,7 @@ to the tensor. The parameters are determined by the privacy_spending and the
 other parameters. It also uses an accountant to keep track of the privacy
 spending.
 """
-from __future__ import division
+
 
 import collections
 

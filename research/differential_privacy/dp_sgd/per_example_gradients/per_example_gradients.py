@@ -233,10 +233,10 @@ class Conv2DPXG(object):
     batch_size = input_shape[0]
     input_px = [tf.slice(
         input_, [example] + [0] * 3, [1] + input_shape[1:]) for example
-                in xrange(batch_size)]
+                in range(batch_size)]
     for input_x in input_px:
       assert int(input_x.get_shape()[0]) == 1
-    w_px = [tf.identity(w) for example in xrange(batch_size)]
+    w_px = [tf.identity(w) for example in range(batch_size)]
     conv_px = [tf.nn.conv2d(input_x, w_x,
                             strides=strides,
                             padding=padding)
@@ -341,7 +341,7 @@ def PerExampleGradients(ys, xs, grad_ys=None, name="gradients",
                                      colocate_gradients_with_ops=
                                      colocate_gradients_with_ops,
                                      gate_gradients=gate_gradients)
-  grad_dict = OrderedDict(zip(merged_interface, interface_gradients))
+  grad_dict = OrderedDict(list(zip(merged_interface, interface_gradients)))
   # Build the per-example gradients with respect to the xs
   if colocate_gradients_with_ops:
     raise NotImplementedError("The per-example gradients are not yet "

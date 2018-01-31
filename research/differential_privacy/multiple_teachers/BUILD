@@ -88,6 +88,6 @@ py_library(
         "analysis.py",
     ],
     deps = [
-        "//differential_privacy/multiple_teachers:input",
+        "//multiple_teachers:input",
     ],
 )

@@ -15,7 +15,7 @@
 
 """Differentially private optimizers.
 """
-from __future__ import division
+
 
 import tensorflow as tf
 
@@ -138,7 +138,7 @@ class DPGradientDescentOptimizer(tf.train.GradientDescentOptimizer):
       sanitized_grads = self.compute_sanitized_gradients(
           loss, var_list=var_list)
 
-      grads_and_vars = zip(sanitized_grads, var_list)
+      grads_and_vars = list(zip(sanitized_grads, var_list))
       self._assert_valid_dtypes([v for g, v in grads_and_vars if g is not None])
 
       apply_grads = self.apply_gradients(grads_and_vars,
@@ -214,7 +214,7 @@ class DPGradientDescentOptimizer(tf.train.GradientDescentOptimizer):
         normalized_grads.append(normalized_grad)
 
       with tf.control_dependencies(normalized_grads):
-        grads_and_vars = zip(normalized_grads, var_list)
+        grads_and_vars = list(zip(normalized_grads, var_list))
         self._assert_valid_dtypes(
             [v for g, v in grads_and_vars if g is not None])
         apply_san_grads = self.apply_gradients(grads_and_vars,
@@ -224,7 +224,7 @@ class DPGradientDescentOptimizer(tf.train.GradientDescentOptimizer):
       # Now reset the accumulators to zero
       resets_list = []
       with tf.control_dependencies([apply_san_grads]):
-        for _, acc in self._grad_accum_dict.items():
+        for _, acc in list(self._grad_accum_dict.items()):
           reset = tf.assign(acc, tf.zeros_like(acc))
           resets_list.append(reset)
       resets_list.append(self._batch_count.assign_add(1))

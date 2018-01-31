@@ -15,7 +15,7 @@
 
 """Utils for building and training NN models.
 """
-from __future__ import division
+
 
 import math
 

@@ -76,7 +76,7 @@ class Operator:
                       'QueueDequeueManyV2', 'Merge', 'BarrierInsertMany',
                       'NoOp', 'ExpandDims', 'RandomUniformInt',
                       'RandomStandardNormal', 'ShapeN', 'Enter', 'Exit',
-                      'Size', 'NonMaxSuppressionV2'}
+                      'Size', 'NonMaxSuppressionV2', 'RandomShuffleQueueV2'}
 
         tensor_array_matcher = re.compile('TensorArray')
         if tensor_array_matcher.match(self.op_type) is not None:

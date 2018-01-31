@@ -7,7 +7,7 @@ exports_files(["LICENSE"])
 package_group(
     name = "internal",
     packages = [
-        "//differential_privacy/...",
+        "//...",
     ],
 )
 
@@ -17,7 +17,7 @@ py_library(
         "accountant.py",
     ],
     deps = [
-        "//differential_privacy/dp_sgd/dp_optimizer:utils",
+        "//dp_sgd/dp_optimizer:utils",
     ],
 )
 

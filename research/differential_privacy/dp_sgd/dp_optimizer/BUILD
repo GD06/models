@@ -7,7 +7,7 @@ exports_files(["LICENSE"])
 package_group(
     name = "internal",
     packages = [
-        "//differential_privacy/...",
+        "//...",
     ],
 )
 
@@ -37,8 +37,8 @@ py_library(
     ],
     deps = [
         ":utils",
-        "//differential_privacy/dp_sgd/per_example_gradients",
-        "//differential_privacy/privacy_accountant/tf:accountant",
+        "//dp_sgd/per_example_gradients",
+        "//privacy_accountant/tf:accountant",
     ],
 )
 
