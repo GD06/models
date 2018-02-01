@@ -25,6 +25,8 @@ import tensorflow as tf
 from google.protobuf import text_format
 import data_utils
 
+from cg_profiler.cg_graph import CompGraph
+
 FLAGS = tf.flags.FLAGS
 # General flags.
 tf.flags.DEFINE_string('mode', 'eval',
@@ -83,7 +85,7 @@ def _LoadModel(gd_file, ckpt_file):
   """
   with tf.Graph().as_default():
     sys.stderr.write('Recovering graph.\n')
-    with tf.gfile.FastGFile(gd_file, 'r') as f:
+    with tf.gfile.FastGFile(gd_file, 'rb') as f:
       s = f.read().decode()
       gd = tf.GraphDef()
       text_format.Merge(s, gd)
@@ -139,7 +141,24 @@ def _EvalModel(dataset):
                   t['target_weights_in']: weights}
     if 'char_inputs_in' in t:
       input_dict[t['char_inputs_in']] = char_inputs
-    log_perp = sess.run(t['log_perplexity_out'], feed_dict=input_dict)
+
+    options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+    run_metadata = tf.RunMetadata()
+
+    log_perp = sess.run(t['log_perplexity_out'], feed_dict=input_dict,
+                        options=options, run_metadata=run_metadata)
+
+    cg = CompGraph('lm_1b', run_metadata, t['log_perplexity_out'].graph)
+
+    cg_tensor_dict = cg.get_tensors()
+    cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    cg_sorted_items = []
+    for cg_key in cg_sorted_keys:
+      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+    cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=input_dict)
+    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                   'lm_1b.pickle')
 
     if np.isnan(log_perp):
       sys.stderr.error('log_perplexity is Nan.\n')
@@ -178,7 +197,7 @@ def _SampleModel(prefix_words, vocab):
 
   prefix = [vocab.word_to_id(w) for w in prefix_words.split()]
   prefix_char_ids = [vocab.word_to_char_ids(w) for w in prefix_words.split()]
-  for _ in xrange(FLAGS.num_samples):
+  for _ in range(FLAGS.num_samples):
     inputs = np.zeros([BATCH_SIZE, NUM_TIMESTEPS], np.int32)
     char_ids_inputs = np.zeros(
         [BATCH_SIZE, NUM_TIMESTEPS, vocab.max_word_length], np.int32)
@@ -231,7 +250,7 @@ def _DumpEmb(vocab):
   sys.stderr.write('Finished softmax weights\n')
 
   all_embs = np.zeros([vocab.size, 1024])
-  for i in xrange(vocab.size):
+  for i in range(vocab.size):
     input_dict = {t['inputs_in']: inputs,
                   t['targets_in']: targets,
                   t['target_weights_in']: weights}
@@ -270,7 +289,7 @@ def _DumpSentenceEmbedding(sentence, vocab):
   inputs = np.zeros([BATCH_SIZE, NUM_TIMESTEPS], np.int32)
   char_ids_inputs = np.zeros(
       [BATCH_SIZE, NUM_TIMESTEPS, vocab.max_word_length], np.int32)
-  for i in xrange(len(word_ids)):
+  for i in range(len(word_ids)):
     inputs[0, 0] = word_ids[i]
     char_ids_inputs[0, 0, :] = char_ids[i]
 

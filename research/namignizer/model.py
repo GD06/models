@@ -13,9 +13,9 @@
 # limitations under the License.
 """RNN model with embeddings"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import tensorflow as tf
 
@@ -90,7 +90,7 @@ class NamignizerModel(object):
         grads, _ = tf.clip_by_global_norm(tf.gradients(cost, tvars),
                                           config.max_grad_norm)
         optimizer = tf.train.GradientDescentOptimizer(self.lr)
-        self._train_op = optimizer.apply_gradients(zip(grads, tvars))
+        self._train_op = optimizer.apply_gradients(list(zip(grads, tvars)))
 
     def assign_lr(self, session, lr_value):
         session.run(tf.assign(self.lr, lr_value))

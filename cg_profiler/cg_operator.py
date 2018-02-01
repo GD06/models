@@ -77,7 +77,9 @@ class Operator:
                       'NoOp', 'ExpandDims', 'RandomUniformInt',
                       'RandomStandardNormal', 'ShapeN', 'Enter', 'Exit',
                       'Size', 'NonMaxSuppressionV2', 'RandomShuffleQueueV2',
-                      'RandomUniform', 'TopKV2', 'DecodeJpeg'}
+                      'RandomUniform', 'TopKV2', 'DecodeJpeg', 'Variable',
+                      'Rank', 'Unique', 'Assign'}
+        # How to deal with sort operators
 
         tensor_array_matcher = re.compile('TensorArray')
         if tensor_array_matcher.match(self.op_type) is not None:
@@ -103,10 +105,11 @@ class Operator:
                         'Fill', 'ResizeBilinear', 'Conv2DBackpropInput',
                         'DepthToSpace', 'SpaceToDepth', 'Mean', 'Round',
                         'Softplus', 'GatherV2', 'Square', 'Rsqrt',
-                        'SquaredDifference', 'Abs', 'BatchMatMul'}
+                        'SquaredDifference', 'Abs', 'BatchMatMul', 'Concat',
+                        'SparseToDense', 'Div'}
 
-        softmax_op_set = {'SoftmaxCrossEntropyWithLogits',
-                          'Softmax'}
+        softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
+                          'SparseSoftmaxCrossEntropyWithLogits'}
 
         scatter_op_set = {'ScatterUpdate', 'ScatterAdd'}
 
@@ -171,7 +174,7 @@ class Operator:
                                 'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
                                 'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth',
                                 'Round', 'GatherV2', 'Square', 'Rsqrt', 'RefSwitch',
-                                'Abs', 'Slice'})
+                                'Abs', 'Slice', 'Concat', 'SparseToDense', 'Div'})
 
         # 2-type elementwise operator
         elementwise_op_set.append({})
@@ -183,8 +186,8 @@ class Operator:
 
         pooling_op_set = {'MaxPool', 'AvgPool'}
 
-        softmax_op_set = {'SoftmaxCrossEntropyWithLogits',
-                          'Softmax'}
+        softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
+                          'SparseSoftmaxCrossEntropyWithLogits'}
 
         scatter_op_set = {'ScatterUpdate', 'ScatterAdd'}
 
@@ -242,14 +245,14 @@ class Operator:
                               'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth',
                               'Round', 'Softplus', 'GatherV2', 'Square', 'Rsqrt',
                               'SquaredDifference', 'RefSwitch', 'Abs', 'Slice',
-                              'ScatterUpdate'}
+                              'ScatterUpdate', 'Concat', 'SparseToDense', 'Div'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean'}
 
         pooling_op_set = {'MaxPool', 'AvgPool'}
 
-        softmax_op_set = {'SoftmaxCrossEntropyWithLogits',
-                          'Softmax'}
+        softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
+                          'SparseSoftmaxCrossEntropyWithLogits'}
 
         if self.is_aid_op:
             return 0.0

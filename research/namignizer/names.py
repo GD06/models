@@ -34,9 +34,9 @@ Here is an overview of the functions available in this module:
     generating arbitrary sequence patterns
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import time
 
@@ -46,6 +46,9 @@ import numpy as np
 from model import NamignizerModel
 import data_utils
 
+import os
+import argparse
+from cg_profiler.cg_graph import CompGraph
 
 class SmallConfig(object):
     """Small config."""
@@ -174,7 +177,7 @@ def train(data_dir, checkpoint_path, config):
             m.saver.save(session, checkpoint_path, global_step=i)
 
 
-def namignize(names, checkpoint_path, config):
+def namignize(names, checkpoint_path, config, model_size):
     """Recognizes names and prints the Perplexity of the model for each names
     in the list
 
@@ -197,17 +200,37 @@ def namignize(names, checkpoint_path, config):
         for name in names:
             x, y = data_utils.name_to_batch(name, m.batch_size, m.num_steps)
 
+            feed_dict = {m.input_data: x, m.targets: y,
+                        m.weights: np.concatenate((
+                        np.ones(len(name)), np.zeros(m.batch_size * m.num_steps - len(name))))}
+
+            model_name = 'namignize_{}'.format(model_size)
+
+            options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+            run_metadata = tf.RunMetadata()
+
             cost, loss, _ = session.run([m.cost, m.loss, tf.no_op()],
-                                  {m.input_data: x,
-                                   m.targets: y,
-                                   m.weights: np.concatenate((
-                                       np.ones(len(name)), np.zeros(m.batch_size * m.num_steps - len(name))))})
+                                        feed_dict=feed_dict, options=options,
+                                        run_metadata=run_metadata)
+            cg = CompGraph(model_name, run_metadata, tf.get_default_graph())
+
+            cg_tensor_dict = cg.get_tensors()
+            cg_sorted_keys = sorted(cg_tensor_dict.keys())
+            cg_sorted_items = []
+            for cg_key in cg_sorted_keys:
+                cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+            cg_sorted_shape = session.run(cg_sorted_items, feed_dict=feed_dict)
+            cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                           '{}.pickle'.format(model_name))
+
+            exit(0)
 
             print("Name {} gives us a perplexity of {}".format(
                 name, np.exp(cost)))
 
 
-def namignator(checkpoint_path, config):
+def namignator(checkpoint_path, config, model_size):
     """Generates names randomly according to a given model
 
     Args:
@@ -247,13 +270,36 @@ def namignator(checkpoint_path, config):
             next_letter = np.random.choice(27, p=activations[0])
             name += [next_letter]
 
-        print(map(lambda x: chr(x + 96), name))
+        print([chr(x + 96) for x in name])
 
+
+def main():
+
+    parser = argparse.ArgumentParser(
+        description="train or evaluate a model according to small config.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument('--mode', choices=['train', 'eval'], default='train')
+    parser.add_argument('--data_path', default="data/SmallNames.txt",
+                        help="a txt file for training")
+    parser.add_argument('--checkpoint_path', default="model/namignizer",
+                        help='checkpoint path to store or restore models')
+    parser.add_argument('--config', choices=['small', 'large'],
+                        default='small', help="specify different configs")
+
+    args = parser.parse_args()
+
+    if args.config == 'small':
+        config = SmallConfig
+    else:
+        config = LargeConfig
+
+    if args.mode == 'train':
+        train(args.data_path, args.checkpoint_path, config)
+    else:
+        namignize(["mary", "ida", "gazorbazorb", "mmmhmm", "bob"],
+                  args.checkpoint_path, config, args.config)
+        namignator(args.checkpoint_path, config, args.config)
 
 if __name__ == "__main__":
-    train("data/SmallNames.txt", "model/namignizer", SmallConfig)
-
-    namignize(["mary", "ida", "gazorbazorb", "mmmhmm", "bob"],
-        tf.train.latest_checkpoint("model"), SmallConfig)
-
-    namignator(tf.train.latest_checkpoint("model"), SmallConfig)
+    main()
