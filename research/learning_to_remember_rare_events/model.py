@@ -24,6 +24,8 @@ import tensorflow as tf
 
 import memory
 
+from cg_profiler.cg_graph import CompGraph
+
 FLAGS = tf.flags.FLAGS
 
 
@@ -204,7 +206,7 @@ class Model(object):
     params = tf.trainable_variables()
     gradients = tf.gradients(loss, params)
     clipped_gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
-    return opt.apply_gradients(zip(clipped_gradients, params),
+    return opt.apply_gradients(list(zip(clipped_gradients, params)),
                                global_step=self.global_step)
 
   def get_optimizer(self):
@@ -293,7 +295,27 @@ class Model(object):
     outputs = [self.y_preds]
     y_preds = []
     for xx, yy in zip(x, y):
-      out = sess.run(outputs, feed_dict={self.x: xx, self.y: yy})
+
+      options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+      run_metadata = tf.RunMetadata()
+
+      out = sess.run(outputs, feed_dict={self.x: xx, self.y: yy},
+                     options=options, run_metadata=run_metadata)
+      cg = CompGraph('learning_to_remember_rare_events', run_metadata, tf.get_default_graph())
+
+      cg_tensor_dict = cg.get_tensors()
+      cg_sorted_keys = sorted(cg_tensor_dict.keys())
+      cg_sorted_items = []
+      for cg_key in cg_sorted_keys:
+        cg_sorted_items.append(cg_tensor_dict[cg_key].shape)
+
+      #cg_sorted_shape = sess.run(cg_sorted_items,
+      #                           feed_dict={self.x: xx, self.y: yy})
+      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_items)),
+                     'learning_to_remember_rare_events.pickle')
+
+      exit(0)
+
       y_pred = out[0]
       y_preds.append(y_pred)
 

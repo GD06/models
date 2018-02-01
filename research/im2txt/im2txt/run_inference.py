@@ -14,9 +14,9 @@
 # ==============================================================================
 r"""Generate captions for images using default beam search parameters."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import math
 import os
@@ -49,7 +49,7 @@ def main(_):
     model = inference_wrapper.InferenceWrapper()
     restore_fn = model.build_graph_from_config(configuration.ModelConfig(),
                                                FLAGS.checkpoint_path)
-  g.finalize()
+  #g.finalize()
 
   # Create the vocabulary.
   vocab = vocabulary.Vocabulary(FLAGS.vocab_file)
@@ -70,7 +70,7 @@ def main(_):
     generator = caption_generator.CaptionGenerator(model, vocab)
 
     for filename in filenames:
-      with tf.gfile.GFile(filename, "r") as f:
+      with tf.gfile.GFile(filename, "rb") as f:
         image = f.read()
       captions = generator.beam_search(sess, image)
       print("Captions for image %s:" % os.path.basename(filename))

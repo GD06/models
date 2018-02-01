@@ -20,7 +20,7 @@ Simply call
   python data_utils.py
 """
 
-import cPickle as pickle
+import pickle as pickle
 import logging
 import os
 import subprocess
@@ -31,8 +31,12 @@ from scipy.misc import imrotate
 from scipy.ndimage import imread
 import tensorflow as tf
 
+if os.getenv('DATA_INPUT_DIR') is not None:
+  MAIN_DIR = os.path.join(os.getenv('DATA_INPUT_DIR'),
+                          'learning_to_remember_rare_events')
+else:
+  MAIN_DIR = ''
 
-MAIN_DIR = ''
 REPO_LOCATION = 'https://github.com/brendenlake/omniglot.git'
 REPO_DIR = os.path.join(MAIN_DIR, 'omniglot')
 DATA_DIR = os.path.join(REPO_DIR, 'python')
@@ -53,9 +57,9 @@ def get_data():
     Train and test data as dictionaries mapping
     label to list of examples.
   """
-  with tf.gfile.GFile(DATA_FILE_FORMAT % 'train') as f:
+  with tf.gfile.GFile(DATA_FILE_FORMAT % 'train', 'rb') as f:
     processed_train_data = pickle.load(f)
-  with tf.gfile.GFile(DATA_FILE_FORMAT % 'test') as f:
+  with tf.gfile.GFile(DATA_FILE_FORMAT % 'test', 'rb') as f:
     processed_test_data = pickle.load(f)
 
   train_data = {}
@@ -71,9 +75,9 @@ def get_data():
 
   intersection = set(train_data.keys()) & set(test_data.keys())
   assert not intersection, 'Train and test data intersect.'
-  ok_num_examples = [len(ll) == 20 for _, ll in train_data.iteritems()]
+  ok_num_examples = [len(ll) == 20 for _, ll in train_data.items()]
   assert all(ok_num_examples), 'Bad number of examples in train data.'
-  ok_num_examples = [len(ll) == 20 for _, ll in test_data.iteritems()]
+  ok_num_examples = [len(ll) == 20 for _, ll in test_data.items()]
   assert all(ok_num_examples), 'Bad number of examples in test data.'
 
   logging.info('Number of labels in train data: %d.', len(train_data))
@@ -156,7 +160,7 @@ def write_datafiles(directory, write_file,
 
   images_np = np.zeros([len(images), imgwidth, imgheight], dtype=np.bool)
   labels_np = np.zeros([len(labels)], dtype=np.uint32)
-  for i in xrange(len(images)):
+  for i in range(len(images)):
     images_np[i, :, :] = images[i]
     labels_np[i] = labels[i]
 

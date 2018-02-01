@@ -15,15 +15,11 @@
 
 """Model wrapper class for performing inference with a ShowAndTellModel."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-
-
 from im2txt import show_and_tell_model
 from im2txt.inference_utils import inference_wrapper_base
 
+from cg_profiler.cg_graph import CompGraph
+import tensorflow as tf
 
 class InferenceWrapper(inference_wrapper_base.InferenceWrapperBase):
   """Model wrapper class for performing inference with a ShowAndTellModel."""
@@ -37,15 +33,51 @@ class InferenceWrapper(inference_wrapper_base.InferenceWrapperBase):
     return model
 
   def feed_image(self, sess, encoded_image):
+    options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+    run_metadata = tf.RunMetadata()
+
     initial_state = sess.run(fetches="lstm/initial_state:0",
-                             feed_dict={"image_feed:0": encoded_image})
+                             feed_dict={"image_feed:0": encoded_image},
+                             options=options, run_metadata=run_metadata)
+    cg = CompGraph('im2txt_feed_image', run_metadata, tf.get_default_graph())
+
+    cg_tensor_dict = cg.get_tensors()
+    cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    cg_sorted_items = []
+    for cg_key in cg_sorted_keys:
+      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+    cg_sorted_shape = sess.run(cg_sorted_items,
+                               feed_dict={"image_feed:0": encoded_image})
+    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                   'im2txt_feed_image.pickle')
+
     return initial_state
 
   def inference_step(self, sess, input_feed, state_feed):
+
+    options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+    run_metadata = tf.RunMetadata()
+
     softmax_output, state_output = sess.run(
         fetches=["softmax:0", "lstm/state:0"],
         feed_dict={
             "input_feed:0": input_feed,
             "lstm/state_feed:0": state_feed,
-        })
+        }, options = options, run_metadata=run_metadata)
+    cg = CompGraph('im2txt_infer_step', run_metadata, tf.get_default_graph())
+
+    cg_tensor_dict = cg.get_tensors()
+    cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    cg_sorted_items = []
+    for cg_key in cg_sorted_keys:
+      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+    cg_sorted_shape = sess.run(cg_sorted_items,
+                               feed_dict={"input_feed:0": input_feed,
+                                          "lstm/state_feed:0": state_feed})
+    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                   'im2txt_infer_step.pickle')
+    exit(0)
+
     return softmax_output, state_output, None

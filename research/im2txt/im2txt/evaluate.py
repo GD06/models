@@ -19,9 +19,9 @@ This script should be run concurrently with training so that summaries show up
 in TensorBoard.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import math
 import os.path
@@ -76,7 +76,7 @@ def evaluate_model(sess, model, global_step, summary_writer, summary_op):
   start_time = time.time()
   sum_losses = 0.
   sum_weights = 0.
-  for i in xrange(num_eval_batches):
+  for i in range(num_eval_batches):
     cross_entropy_losses, weights = sess.run([
         model.target_cross_entropy_losses,
         model.target_cross_entropy_loss_weights
@@ -143,7 +143,7 @@ def run_once(model, saver, summary_writer, summary_op):
           global_step=global_step,
           summary_writer=summary_writer,
           summary_op=summary_op)
-    except Exception, e:  # pylint: disable=broad-except
+    except Exception as e:  # pylint: disable=broad-except
       tf.logging.error("Evaluation failed.")
       coord.request_stop(e)
 

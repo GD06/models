@@ -77,7 +77,7 @@ class FakeModel(object):
     batch_size = input_feed.shape[0]
     softmax_output = np.zeros([batch_size, self._vocab_size])
     for batch_index, word_id in enumerate(input_feed):
-      for next_word, probability in self._probabilities[word_id].items():
+      for next_word, probability in list(self._probabilities[word_id].items()):
         softmax_output[batch_index, next_word] = probability
 
     # Nominal state and metadata.

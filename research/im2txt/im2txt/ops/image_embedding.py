@@ -15,9 +15,9 @@
 
 """Image embedding ops."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 
 import tensorflow as tf
@@ -108,7 +108,7 @@ def inception_v3(images,
 
   # Add summaries.
   if add_summaries:
-    for v in end_points.values():
+    for v in list(end_points.values()):
       tf.contrib.layers.summaries.summarize_activation(v)
 
   return net

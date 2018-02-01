@@ -76,7 +76,8 @@ class Operator:
                       'QueueDequeueManyV2', 'Merge', 'BarrierInsertMany',
                       'NoOp', 'ExpandDims', 'RandomUniformInt',
                       'RandomStandardNormal', 'ShapeN', 'Enter', 'Exit',
-                      'Size', 'NonMaxSuppressionV2', 'RandomShuffleQueueV2'}
+                      'Size', 'NonMaxSuppressionV2', 'RandomShuffleQueueV2',
+                      'RandomUniform', 'TopKV2', 'DecodeJpeg'}
 
         tensor_array_matcher = re.compile('TensorArray')
         if tensor_array_matcher.match(self.op_type) is not None:
@@ -102,15 +103,18 @@ class Operator:
                         'Fill', 'ResizeBilinear', 'Conv2DBackpropInput',
                         'DepthToSpace', 'SpaceToDepth', 'Mean', 'Round',
                         'Softplus', 'GatherV2', 'Square', 'Rsqrt',
-                        'SquaredDifference'}
+                        'SquaredDifference', 'Abs', 'BatchMatMul'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits',
                           'Softmax'}
 
+        scatter_op_set = {'ScatterUpdate', 'ScatterAdd'}
+
         if self.is_aid_op:
             return 0
 
-        if (self.op_type == 'Switch' or self.op_type == 'Select'):
+        if (self.op_type == 'Switch' or self.op_type == 'Select'
+                or self.op_type == 'RefSwitch'):
             return self._cal_mem_switch()
         if self.op_type == 'Where':
             return self._cal_mem_where()
@@ -120,8 +124,12 @@ class Operator:
 
         if (self.op_type == 'HashTableV2' or
                 self.op_type == 'LookupTableFindV2' or
-                self.op_type == 'StridedSlice'):
+                self.op_type == 'StridedSlice' or
+                self.op_type == 'Slice'):
             return self._cal_mem_tableindex(tf_opr)
+
+        if self.op_type in scatter_op_set:
+            return self._cal_mem_scatter(tf_opr)
 
         if self.op_type in softmax_op_set:
             return self._cal_mem_softmax()
@@ -152,17 +160,18 @@ class Operator:
 
         # 1-type elementwise operator
         elementwise_op_set.append({'Mul', 'Sub', 'Cast', 'ConcatV2', 'BiasAdd',
-                              'Sigmoid', 'Tanh', 'Add', 'Min', 'GreaterEqual',
-                              'Max', 'LessEqual', 'Switch', 'LogicalNot',
-                              'Greater', 'Where', 'Gather', 'Transpose',
-                              'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
-                              'Select', 'Relu', 'Equal', 'AssignAdd', 'Sign',
-                              'OneHot', 'Less', 'LoopCond', 'NextIteration',
-                              'Minimum', 'Maximum', 'Range', 'Exp', 'Log',
-                              'HashTableV2', 'LookupTableFindV2', 'StridedSlice',
-                              'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
-                              'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth',
-                              'Round', 'GatherV2', 'Square', 'Rsqrt'})
+                                'Sigmoid', 'Tanh', 'Add', 'Min', 'GreaterEqual',
+                                'Max', 'LessEqual', 'Switch', 'LogicalNot',
+                                'Greater', 'Where', 'Gather', 'Transpose',
+                                'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
+                                'Select', 'Relu', 'Equal', 'AssignAdd', 'Sign',
+                                'OneHot', 'Less', 'LoopCond', 'NextIteration',
+                                'Minimum', 'Maximum', 'Range', 'Exp', 'Log',
+                                'HashTableV2', 'LookupTableFindV2', 'StridedSlice',
+                                'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
+                                'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth',
+                                'Round', 'GatherV2', 'Square', 'Rsqrt', 'RefSwitch',
+                                'Abs', 'Slice'})
 
         # 2-type elementwise operator
         elementwise_op_set.append({})
@@ -177,11 +186,16 @@ class Operator:
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits',
                           'Softmax'}
 
+        scatter_op_set = {'ScatterUpdate', 'ScatterAdd'}
+
         if self.is_aid_op:
             return 0
 
         if self.op_type == 'MatMul':
             return self._cal_comp_matmul(tf_opr)
+
+        if self.op_type == 'BatchMatMul':
+            return self._cal_comp_batchmatmul(tf_opr)
 
         if (self.op_type == 'Conv2D'
                 or self.op_type == 'Conv2DBackpropInput'):
@@ -192,6 +206,9 @@ class Operator:
 
         if self.op_type == 'AddN':
             return self._cal_comp_addn(tf_opr)
+
+        if self.op_type in scatter_op_set:
+            return self._cal_comp_scatter(tf_opr)
 
         if self.op_type in softmax_op_set:
             return self._cal_comp_softmax(tf_opr)
@@ -224,7 +241,8 @@ class Operator:
                               'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
                               'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth',
                               'Round', 'Softplus', 'GatherV2', 'Square', 'Rsqrt',
-                              'SquaredDifference'}
+                              'SquaredDifference', 'RefSwitch', 'Abs', 'Slice',
+                              'ScatterUpdate'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean'}
 
@@ -238,6 +256,9 @@ class Operator:
 
         if self.op_type == 'MatMul':
             return self._cal_par_matmul(tf_opr)
+
+        if self.op_type == 'BatchMatMul':
+            return self._cal_par_batchmatmul(tf_opr)
 
         if (self.op_type == 'Conv2D'
                 or self.op_type == 'Conv2DBackpropInput'):
@@ -287,6 +308,20 @@ class Operator:
     def _cal_comp_matmul(self, tf_opr):
         m, n, k = self._extract_m_n_k()
         comp_ops = 2 * m * n * k
+        return comp_ops
+
+    def _cal_comp_batchmatmul(self, tf_opr):
+        a_shape = self.input_tensor_shape[0][-2:]
+        b_shape = self.input_tensor_shape[1][-2:]
+        c_shape = self.output_tensor_shape[0][-2:]
+
+        batch_size = (np.prod(np.array(self.input_tensor_shape[0]))
+                      / np.prod(np.array(a_shape)))
+        k_sqr = np.prod(np.array(a_shape)) * np.prod(np.array(b_shape))
+        k_sqr = k_sqr / np.prod(np.array(c_shape))
+        k = math.sqrt(k_sqr)
+
+        comp_ops = 2 * batch_size * k * np.prod(np.array(c_shape))
         return comp_ops
 
     def _extract_conv2d_params(self, tf_opr):
@@ -359,10 +394,27 @@ class Operator:
         n = max(1, len(self.input_tensor_shape) - 1)
         return n * np.prod(np.array(tmp_list))
 
+    def _cal_comp_scatter(self, tf_opr):
+        tmp_list = self.input_tensor_shape[2]
+        return np.prod(np.array(tmp_list))
+
     def _cal_par_matmul(self, tf_opr):
         M, N, K = self._extract_m_n_k()
         K = max(K, 2.0)
         par_ratio = 0.5 + (1.0 / (2 * math.ceil(math.log2(K))))
+        return par_ratio
+
+    def _cal_par_batchmatmul(self, tf_opr):
+        a_shape = self.input_tensor_shape[0][-2:]
+        b_shape = self.input_tensor_shape[1][-2:]
+        c_shape = self.output_tensor_shape[0][-2:]
+
+        k_sqr = np.prod(np.array(a_shape)) * np.prod(np.array(b_shape))
+        k_sqr = k_sqr / np.prod(np.array(c_shape))
+        k = math.sqrt(k_sqr)
+        k = max(k, 2.0)
+
+        par_ratio = 0.5 + (1.0 / (2 * math.ceil(math.log2(k))))
         return par_ratio
 
     def _cal_par_conv2d(self, tf_opr):
@@ -414,4 +466,11 @@ class Operator:
     def _cal_mem_tableindex(self, tf_opr):
         tmp_list = self.output_tensor_shape[0]
         return 2 * np.prod(np.array(tmp_list))
+
+    def _cal_mem_scatter(self, tf_opr):
+        tmp_list = self.input_tensor_shape[2]
+        index_list = self.input_tensor_shape[1]
+        mem_trans = (np.prod(np.array(index_list)) +
+                     2 * np.prod(np.array(tmp_list)))
+        return mem_trans
 

@@ -15,9 +15,9 @@
 
 """Tests for tensorflow_models.im2txt.show_and_tell_model."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 
 import numpy as np
@@ -95,7 +95,7 @@ class ShowAndTellModelTest(tf.test.TestCase):
         shape.
       feed_dict: Values of Tensors to feed into Session.run().
     """
-    fetches = expected_shapes.keys()
+    fetches = list(expected_shapes.keys())
 
     with self.test_session() as sess:
       sess.run(tf.global_variables_initializer())

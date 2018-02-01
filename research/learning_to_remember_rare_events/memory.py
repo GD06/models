@@ -282,7 +282,7 @@ class LSHMemory(Memory):
             'hash_vecs%d' % i, [self.num_hashes, self.key_dim],
             dtype=tf.float32, trainable=False,
             initializer=tf.truncated_normal_initializer(0, 1))
-        for i in xrange(self.num_libraries)]
+        for i in range(self.num_libraries)]
 
     # map representing which hash slots map to which mem keys
     self.hash_slots = [
@@ -291,7 +291,7 @@ class LSHMemory(Memory):
             dtype=tf.int32, trainable=False,
             initializer=tf.random_uniform_initializer(maxval=self.memory_size,
                                                       dtype=tf.int32))
-        for i in xrange(self.num_libraries)]
+        for i in range(self.num_libraries)]
 
   def get(self):  # not implemented
     return self.mem_keys, self.mem_vals, self.mem_age, self.recent_idx
@@ -319,13 +319,13 @@ class LSHMemory(Memory):
 
     binary_hash = [
         tf.less(tf.matmul(query, self.hash_vecs[i], transpose_b=True), 0)
-        for i in xrange(self.num_libraries)]
+        for i in range(self.num_libraries)]
     hash_slot_idxs = [
         tf.reduce_sum(
             tf.to_int32(binary_hash[i]) *
-            tf.constant([[2 ** i for i in xrange(self.num_hashes)]],
+            tf.constant([[2 ** i for i in range(self.num_hashes)]],
                         dtype=tf.int32), 1)
-        for i in xrange(self.num_libraries)]
+        for i in range(self.num_libraries)]
     return hash_slot_idxs
 
   def get_hint_pool_idxs(self, normalized_query):

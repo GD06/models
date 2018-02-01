@@ -101,17 +101,17 @@ class Trainer(object):
       with size episode_length and y is a list of batches of labels.
     """
 
-    episodes_x = [[] for _ in xrange(episode_length)]
-    episodes_y = [[] for _ in xrange(episode_length)]
+    episodes_x = [[] for _ in range(episode_length)]
+    episodes_y = [[] for _ in range(episode_length)]
     assert len(data) >= episode_width
-    keys = data.keys()
-    for b in xrange(batch_size):
+    keys = list(data.keys())
+    for b in range(batch_size):
       episode_labels = random.sample(keys, episode_width)
       remainder = episode_length % episode_width
       remainders = [0] * (episode_width - remainder) + [1] * remainder
       episode_x = [
           random.sample(data[lab],
-                        r + (episode_length - remainder) / episode_width)
+                        int(r + (episode_length - remainder) / episode_width))
           for lab, r in zip(episode_labels, remainders)]
       episode = sum([[(x, i, ii) for ii, x in enumerate(xx)]
                      for i, xx in enumerate(episode_x)], [])
@@ -120,7 +120,7 @@ class Trainer(object):
       # 2nd showing
       episode.sort(key=lambda elem: elem[2])
       assert len(episode) == episode_length
-      for i in xrange(episode_length):
+      for i in range(episode_length):
         episodes_x[i].append(episode[i][0])
         episodes_y[i].append(episode[i][1] + b * episode_width)
 
@@ -159,9 +159,9 @@ class Trainer(object):
     logging.info('batch_size %d', batch_size)
 
     assert all(len(v) >= float(episode_length) / episode_width
-               for v in train_data.itervalues())
+               for v in train_data.values())
     assert all(len(v) >= float(episode_length) / episode_width
-               for v in valid_data.itervalues())
+               for v in valid_data.values())
 
     output_dim = episode_width
     self.model = self.get_model()
@@ -182,7 +182,7 @@ class Trainer(object):
     losses = []
     random.seed(FLAGS.seed)
     np.random.seed(FLAGS.seed)
-    for i in xrange(FLAGS.num_episodes):
+    for i in range(FLAGS.num_episodes):
       x, y = self.sample_episode_batch(
           train_data, episode_length, episode_width, batch_size)
       outputs = self.model.episode_step(sess, x, y, clear_memory=True)
@@ -196,8 +196,8 @@ class Trainer(object):
 
         # validation
         correct = []
-        correct_by_shot = dict((k, []) for k in xrange(self.episode_width + 1))
-        for _ in xrange(FLAGS.validation_length):
+        correct_by_shot = dict((k, []) for k in range(self.episode_width + 1))
+        for _ in range(FLAGS.validation_length):
           x, y = self.sample_episode_batch(
               valid_data, episode_length, episode_width, 1)
           outputs = self.model.episode_predict(
@@ -206,7 +206,7 @@ class Trainer(object):
           correct.append(self.compute_correct(np.array(y), y_preds))
 
           # compute per-shot accuracies
-          seen_counts = [[0] * episode_width for _ in xrange(batch_size)]
+          seen_counts = [[0] * episode_width for _ in range(batch_size)]
           # loop over episode steps
           for yy, yy_preds in zip(y, y_preds):
             # loop over batch examples
@@ -221,7 +221,7 @@ class Trainer(object):
         logging.info('validation overall accuracy %f', np.mean(correct))
         logging.info('%d-shot: %.3f, ' * (self.episode_width + 1),
                      *sum([[k, np.mean(correct_by_shot[k])]
-                           for k in xrange(self.episode_width + 1)], []))
+                           for k in range(self.episode_width + 1)], []))
 
         if saver and FLAGS.save_dir:
           saved_file = saver.save(sess,
