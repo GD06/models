@@ -18,6 +18,8 @@ import os
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
+from cg_profiler.cg_graph import CompGraph
+
 def load_image_into_numpy_array(image):
     (im_width, im_height) = image.size
     return np.array(image.getdata()).reshape(
@@ -75,18 +77,6 @@ def main():
                                      'image{}.jpg'.format(i))
                         for i in range(1, 2)]
 
-    #with detection_graph.as_default():
-    #    op_list = detection_graph.get_operations()
-    #    tensor_dict = {}
-    #    for op in op_list:
-    #        for input_tensor in op.inputs:
-    #            tensor_dict[input_tensor.name] = input_tensor
-    #        for output_tensor in op.outputs:
-    #            tensor_dict[output_tensor.name] = output_tensor
-
-    #print(list(tensor_dict.keys()))
-    #exit(0)
-
     with detection_graph.as_default():
         with tf.Session(graph=detection_graph) as sess:
 
@@ -105,9 +95,27 @@ def main():
                 image = Image.open(image_path)
                 image_np = load_image_into_numpy_array(image)
                 image_np_expanded = np.expand_dims(image_np, axis=0)
+
+                options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+                run_metadata = tf.RunMetadata()
+
                 results = sess.run([detection_boxes, detection_scores,
                                     detection_classes, num_detections],
-                                   feed_dict={image_tensor: image_np_expanded})
+                                   feed_dict={image_tensor: image_np_expanded},
+                                   options=options, run_metadata=run_metadata)
+                cg = CompGraph(model_name, run_metadata, detection_graph)
+
+                cg_tensor_dict = cg.get_tensors()
+                cg_sorted_keys = sorted(cg_tensor_dict.keys())
+                cg_sorted_items = []
+                for cg_key in cg_sorted_keys:
+                  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+                cg_sorted_shape = sess.run(cg_sorted_items,
+                                           feed_dict={image_tensor: image_np_expanded})
+                cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_items)),
+                               '{}.pickle'.format(model_name))
+
                 print('Image: {}, number of detected: {}'.format(
                     image_path, len(results[3])))
 
