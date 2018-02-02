@@ -81,6 +81,9 @@ class Operator:
                       'Rank', 'Unique', 'Assign'}
         # How to deal with sort operators
 
+        if 'while' in self.op_name.lower():
+           return True
+
         tensor_array_matcher = re.compile('TensorArray')
         if tensor_array_matcher.match(self.op_type) is not None:
             return True
@@ -106,7 +109,9 @@ class Operator:
                         'DepthToSpace', 'SpaceToDepth', 'Mean', 'Round',
                         'Softplus', 'GatherV2', 'Square', 'Rsqrt',
                         'SquaredDifference', 'Abs', 'BatchMatMul', 'Concat',
-                        'SparseToDense', 'Div'}
+                        'SparseToDense', 'Div', 'LogicalAnd', 'Tile', 'Relu6',
+                        'DepthwiseConv2dNative', 'CropAndResize', 'FloorMod',
+                        'SpaceToBatchND', 'BatchToSpaceND'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
                           'SparseSoftmaxCrossEntropyWithLogits'}
@@ -174,10 +179,12 @@ class Operator:
                                 'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
                                 'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth',
                                 'Round', 'GatherV2', 'Square', 'Rsqrt', 'RefSwitch',
-                                'Abs', 'Slice', 'Concat', 'SparseToDense', 'Div'})
+                                'Abs', 'Slice', 'Concat', 'SparseToDense', 'Div',
+                                'LogicalAnd', 'Tile', 'CropAndResize', 'FloorMod',
+                                'SpaceToBatchND', 'BatchToSpaceND'})
 
         # 2-type elementwise operator
-        elementwise_op_set.append({})
+        elementwise_op_set.append({'Relu6'})
 
         # 3-type elementwise operator
         elementwise_op_set.append({'SquaredDifference', 'Softplus'})
@@ -209,6 +216,9 @@ class Operator:
 
         if self.op_type == 'AddN':
             return self._cal_comp_addn(tf_opr)
+
+        if self.op_type == 'DepthwiseConv2dNative':
+            return self._cal_comp_depthwiseconv2d(tf_opr)
 
         if self.op_type in scatter_op_set:
             return self._cal_comp_scatter(tf_opr)
@@ -245,7 +255,9 @@ class Operator:
                               'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth',
                               'Round', 'Softplus', 'GatherV2', 'Square', 'Rsqrt',
                               'SquaredDifference', 'RefSwitch', 'Abs', 'Slice',
-                              'ScatterUpdate', 'Concat', 'SparseToDense', 'Div'}
+                              'ScatterUpdate', 'Concat', 'SparseToDense', 'Div',
+                              'LogicalAnd', 'Tile', 'Relu6', 'CropAndResize',
+                              'FloorMod', 'SpaceToBatchND', 'BatchToSpaceND'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean'}
 
@@ -269,6 +281,9 @@ class Operator:
 
         if self.op_type == 'AddN':
             return self._cal_par_addn(tf_opr)
+
+        if self.op_type == 'DepthwiseConv2dNative':
+            return self._cal_par_depthwiseconv2d(tf_opr)
 
         if self.op_type in softmax_op_set:
             return self._cal_par_softmax(tf_opr)
@@ -371,6 +386,12 @@ class Operator:
 
         return comp_ops
 
+    def _cal_comp_depthwiseconv2d(self, tf_opr):
+        comp_ops = np.prod(np.array(self.output_tensor_shape[0]))
+        FH = self.input_tensor_shape[1][0]
+        FW = self.input_tensor_shape[1][1]
+        return comp_ops * FH * FW
+
     def _cal_comp_reduce(self, tf_opr):
         tmp_list = self.input_tensor_shape[0]
         comp_ops = np.prod(np.array(tmp_list))
@@ -425,6 +446,14 @@ class Operator:
         K = conv_args['IC'] * conv_args['FH'] * conv_args['FW']
 
         K = max(K, 2.0)
+        par_ratio = 0.5 + (1.0 / (2 * math.ceil(math.log2(K))))
+        return par_ratio
+
+    def _cal_par_depthwiseconv2d(self, tf_opr):
+        FH = self.input_tensor_shape[1][0]
+        FW = self.input_tensor_shape[1][1]
+
+        K = max(FH * FW, 2.0)
         par_ratio = 0.5 + (1.0 / (2 * math.ceil(math.log2(K))))
         return par_ratio
 

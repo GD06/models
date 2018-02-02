@@ -45,7 +45,6 @@ def main():
 
     model_name = args.model_name
     model_file = model_name + '.tar.gz'
-
     tar_file = tarfile.open(os.path.join(model_dir, model_file))
     recorded_name = model_name
     for file in tar_file.getmembers():
@@ -107,13 +106,20 @@ def main():
 
                 cg_tensor_dict = cg.get_tensors()
                 cg_sorted_keys = sorted(cg_tensor_dict.keys())
+                #cg_sorted_shape = []
+                #for cg_key in cg_sorted_keys:
+                #    print(cg_key)
+                #    t = tf.shape(cg_tensor_dict[cg_key])
+                #    cg_sorted_shape.append(t.eval(feed_dict={image_tensor: image_np_expanded},
+                #                                  session=sess))
+
                 cg_sorted_items = []
                 for cg_key in cg_sorted_keys:
-                  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+                    cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
                 cg_sorted_shape = sess.run(cg_sorted_items,
-                                           feed_dict={image_tensor: image_np_expanded})
-                cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_items)),
+                                            feed_dict={image_tensor: image_np_expanded})
+                cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
                                '{}.pickle'.format(model_name))
 
                 print('Image: {}, number of detected: {}'.format(
