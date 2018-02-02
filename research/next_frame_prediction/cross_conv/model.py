@@ -184,7 +184,7 @@ class CrossConvModel(object):
         assert len(encoded_image) == len(kernel)
         assert len(encoded_image) == self.params['batch_size']
         conved_image = []
-        for j in xrange(len(encoded_image)):
+        for j in range(len(encoded_image)):
           conved_image.append(self._CrossConvHelper(
               encoded_image[j], kernel[j]))
         cross_conved_images.append(tf.concat(axis=0, values=conved_image))

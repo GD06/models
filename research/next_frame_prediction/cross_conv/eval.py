@@ -98,7 +98,7 @@ def _Eval():
       sample_z_stddev_log = np.load(io.BytesIO(f.read()))
 
     total_loss = 0.0
-    for _ in xrange(FLAGS.eval_batch_count):
+    for _ in range(FLAGS.eval_batch_count):
       loss_val, total_steps, summaries = sess.run(
           [model.loss, model.global_step, model.summary_op],
           feed_dict={model.z_mean: sample_z_mean,

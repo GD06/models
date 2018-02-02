@@ -75,9 +75,9 @@ def generate_input():
       examples = train_examples
 
     character = sprites[i]
-    for j in character.keys():
+    for j in list(character.keys()):
       pose = character[j]
-      for k in xrange(1, len(pose), 1):
+      for k in range(1, len(pose), 1):
         image = pose[k]
         image2 = pose[k+1]
         examples.append(_images_to_example(image, image2))

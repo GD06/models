@@ -35,15 +35,15 @@ def _add_object(obj_type, image, image2, xpos, ypos):
   if obj_type == 'rectangle':
     xpos2 = xpos + move
     ypos2 = ypos
-    for i in xrange(obj_size):
-      obj[i, 0:i+1, channel] = [1.0 for _ in xrange(i+1)]
+    for i in range(obj_size):
+      obj[i, 0:i+1, channel] = [1.0 for _ in range(i+1)]
   elif obj_type == 'square':
     xpos2 = xpos
     ypos2 = ypos + move
     obj[:, :, channel] = 1.0
 
-  for x in xrange(obj_size):
-    for y in xrange(obj_size):
+  for x in range(obj_size):
+    for y in range(obj_size):
       if obj[x, y, channel] == 1.0:
         image[xpos+x, ypos+y, channel] = 1.0
         image2[xpos2+x, ypos2+y, channel] = 1.0
@@ -66,10 +66,10 @@ def generate_input():
   writer2 = tf.python_io.TFRecordWriter(tf.flags.FLAGS.out_file + '_test')
 
   examples = []
-  for xpos in xrange(0, 40, 3):
-    for ypos in xrange(0, 40, 3):
-      for xpos2 in xrange(0, 40, 3):
-        for ypos2 in xrange(0, 40, 3):
+  for xpos in range(0, 40, 3):
+    for ypos in range(0, 40, 3):
+      for xpos2 in range(0, 40, 3):
+        for ypos2 in range(0, 40, 3):
           image = np.zeros([64, 64, 3])
           image2 = np.zeros([64, 64, 3])
           _add_object('rectangle', image, image2, xpos, ypos)
