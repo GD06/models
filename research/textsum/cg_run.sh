@@ -7,6 +7,7 @@ bazel-bin/seq2seq_attention \
     --data_path=data/data \
     --vocab_path=data/vocab \
     --log_root=${MODEL_INPUT_DIR}/textsum \
-    --eval_root=${LOG_OUTPUT_DIR}/tmp
+    --eval_dir=${LOG_OUTPUT_DIR}/tmp
+
 
 rm -rf ${LOG_OUTPUT_DIR}/tmp
