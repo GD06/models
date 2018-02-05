@@ -55,10 +55,10 @@ def build_tfrecord_input(training=True):
   if not filenames:
     raise RuntimeError('No data files found.')
   index = int(np.floor(FLAGS.train_val_split * len(filenames)))
-  if training:
-    filenames = filenames[:index]
-  else:
-    filenames = filenames[index:]
+  #if training:
+  #  filenames = filenames[:index]
+  #else:
+  #  filenames = filenames[index:]
   filename_queue = tf.train.string_input_producer(filenames, shuffle=True)
   reader = tf.TFRecordReader()
   _, serialized_example = reader.read(filename_queue)

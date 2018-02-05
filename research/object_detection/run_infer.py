@@ -102,7 +102,8 @@ def main():
                                     detection_classes, num_detections],
                                    feed_dict={image_tensor: image_np_expanded},
                                    options=options, run_metadata=run_metadata)
-                cg = CompGraph(model_name, run_metadata, detection_graph)
+                cg = CompGraph(model_name, run_metadata, detection_graph,
+                               keyword_filter="while")
 
                 cg_tensor_dict = cg.get_tensors()
                 cg_sorted_keys = sorted(cg_tensor_dict.keys())

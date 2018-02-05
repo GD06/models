@@ -37,7 +37,7 @@ fi
 
 echo "OUTPUT_DIR=$OUTPUT_DIR"
 
-mkdir "${OUTPUT_DIR}"
+mkdir -p "${OUTPUT_DIR}"
 
 function download_file {
   FILE=$1

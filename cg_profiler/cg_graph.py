@@ -7,7 +7,7 @@ from .cg_operator import Operator
 
 class CompGraph:
 
-    def __init__(self, model_name, run_metadata, tf_graph):
+    def __init__(self, model_name, run_metadata, tf_graph, *, keyword_filter=None):
 
         self.model_name = model_name
         self.run_metadata = run_metadata
@@ -17,6 +17,7 @@ class CompGraph:
         chrome_trace = fetched_timeline.generate_chrome_trace_format()
 
         self.trace_list = json.loads(chrome_trace)
+        self.keyword_filter = keyword_filter
 
         return
 
@@ -34,7 +35,8 @@ class CompGraph:
                 try:
                     tf_repr = self.tf_graph.get_operation_by_name(op_name)
 
-                    op = Operator(op_trace, self.tf_graph, self.model_name)
+                    op = Operator(op_trace, self.tf_graph, self.model_name,
+                                  self.keyword_filter)
                     self.op_list.append(op)
 
                     if not op.is_aid_op:
@@ -52,8 +54,17 @@ class CompGraph:
 
     def op_analysis(self, shape_dict, filename):
 
+        not_impl = {}
+
         for op in self.op_list:
-            op.analysis(shape_dict, self.tf_graph)
+            try:
+                op.analysis(shape_dict, self.tf_graph)
+            except NotImplementedError as excep:
+                not_impl[op.op_type] = 'N'
+
+        if len(not_impl) != 0:
+            print(not_impl)
+            raise NotImplementedError
 
         if os.getenv('LOG_OUTPUT_DIR') is not None:
             full_filename = os.path.join(os.getenv('LOG_OUTPUT_DIR'), 'log',

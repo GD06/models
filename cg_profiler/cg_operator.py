@@ -5,7 +5,7 @@ import re
 
 class Operator:
 
-    def __init__(self, op_trace, tf_graph, model_name):
+    def __init__(self, op_trace, tf_graph, model_name, keyword_filter):
 
         self.elapsed_time = str(op_trace['dur'])
 
@@ -13,6 +13,7 @@ class Operator:
         self.op_name = str(op_args['name'])
         self.op_type = str(op_args['op'])
         self.model_name = model_name
+        self.keyword_filter = keyword_filter
 
         self.is_aid_op = self._is_framework_aid_op()
 
@@ -78,11 +79,12 @@ class Operator:
                       'RandomStandardNormal', 'ShapeN', 'Enter', 'Exit',
                       'Size', 'NonMaxSuppressionV2', 'RandomShuffleQueueV2',
                       'RandomUniform', 'TopKV2', 'DecodeJpeg', 'Variable',
-                      'Rank', 'Unique', 'Assign'}
+                      'Rank', 'Unique', 'Assign', 'RandomShuffle'}
         # How to deal with sort operators
 
-        if 'while' in self.op_name.lower():
-           return True
+        if self.keyword_filter is not None:
+            if self.keyword_filter in self.op_name.lower():
+                return True
 
         tensor_array_matcher = re.compile('TensorArray')
         if tensor_array_matcher.match(self.op_type) is not None:
@@ -133,7 +135,8 @@ class Operator:
         if (self.op_type == 'HashTableV2' or
                 self.op_type == 'LookupTableFindV2' or
                 self.op_type == 'StridedSlice' or
-                self.op_type == 'Slice'):
+                self.op_type == 'Slice' or
+                self.op_type == 'DynamicStitch'):
             return self._cal_mem_tableindex(tf_opr)
 
         if self.op_type in scatter_op_set:
@@ -181,7 +184,7 @@ class Operator:
                                 'Round', 'GatherV2', 'Square', 'Rsqrt', 'RefSwitch',
                                 'Abs', 'Slice', 'Concat', 'SparseToDense', 'Div',
                                 'LogicalAnd', 'Tile', 'CropAndResize', 'FloorMod',
-                                'SpaceToBatchND', 'BatchToSpaceND'})
+                                'SpaceToBatchND', 'BatchToSpaceND', 'DynamicStitch'})
 
         # 2-type elementwise operator
         elementwise_op_set.append({'Relu6'})
@@ -257,7 +260,8 @@ class Operator:
                               'SquaredDifference', 'RefSwitch', 'Abs', 'Slice',
                               'ScatterUpdate', 'Concat', 'SparseToDense', 'Div',
                               'LogicalAnd', 'Tile', 'Relu6', 'CropAndResize',
-                              'FloorMod', 'SpaceToBatchND', 'BatchToSpaceND'}
+                              'FloorMod', 'SpaceToBatchND', 'BatchToSpaceND',
+                              'DynamicStitch'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean'}
 

@@ -24,6 +24,8 @@ from tensorflow.python.platform import flags
 from prediction_input import build_tfrecord_input
 from prediction_model import construct_model
 
+from cg_profiler.cg_graph import CompGraph
+
 # How often to record tensorboard summaries.
 SUMMARY_INTERVAL = 40
 
@@ -154,7 +156,7 @@ class Model(object):
     # L2 loss, PSNR for eval.
     loss, psnr_all = 0.0, 0.0
     for i, x, gx in zip(
-        range(len(gen_images)), images[FLAGS.context_frames:],
+        list(range(len(gen_images))), images[FLAGS.context_frames:],
         gen_images[FLAGS.context_frames - 1:]):
       recon_cost = mean_squared_error(x, gx)
       psnr_i = peak_signal_to_noise_ratio(x, gx)
@@ -165,7 +167,7 @@ class Model(object):
       loss += recon_cost
 
     for i, state, gen_state in zip(
-        range(len(gen_states)), states[FLAGS.context_frames:],
+        list(range(len(gen_states))), states[FLAGS.context_frames:],
         gen_states[FLAGS.context_frames - 1:]):
       state_cost = mean_squared_error(state, gen_state) * 1e-4
       summaries.append(
@@ -231,8 +233,31 @@ def main(unused_argv):
       # Run through validation set.
       feed_dict = {val_model.lr: 0.0,
                    val_model.iter_num: np.float32(itr)}
-      _, val_summary_str = sess.run([val_model.train_op, val_model.summ_op],
-                                     feed_dict)
+
+      options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+      run_metadata = tf.RunMetadata()
+      model_name = 'video_prediction_{}'.format(FLAGS.model.lower())
+
+      eval_loss = sess.run(val_model.loss, feed_dict=feed_dict, options=options,
+                           run_metadata=run_metadata)
+      cg = CompGraph(model_name, run_metadata, tf.get_default_graph())
+
+      cg_tensor_dict = cg.get_tensors()
+      cg_sorted_keys = sorted(cg_tensor_dict.keys())
+      cg_sorted_items = []
+      for cg_key in cg_sorted_keys:
+        cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+      cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
+      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                     '{}.pickle'.format(model_name))
+
+      #_, val_summary_str = sess.run([val_model.train_op, val_model.summ_op],
+      #                               feed_dict)
+
+      print('Evaluation finished')
+      exit(0)
+
       summary_writer.add_summary(val_summary_str, itr)
 
     if (itr) % SAVE_INTERVAL == 2:
