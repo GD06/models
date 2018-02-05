@@ -15,9 +15,9 @@
 
 """Base estimator defining TCN training, test, and inference."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 from abc import ABCMeta
 from abc import abstractmethod
@@ -33,6 +33,7 @@ from tensorflow.contrib.tpu.python.tpu import tpu_config
 from tensorflow.contrib.tpu.python.tpu import tpu_estimator
 from tensorflow.contrib.tpu.python.tpu import tpu_optimizer
 from tensorflow.python.training import session_run_hook
+import collections
 
 tf.app.flags.DEFINE_integer(
     'tf_random_seed', 0, 'Random seed.')
@@ -83,7 +84,7 @@ class InitFromPretrainedCheckpointHook(session_run_hook.SessionRunHook):
     # Final filter by checking shape matching and skipping variables that
     # are not in the checkpoint.
     final_variables_to_restore = {}
-    for var_name, var_tensor in filtered_variables_to_restore.iteritems():
+    for var_name, var_tensor in filtered_variables_to_restore.items():
       if var_name not in variable_shape_map:
         # Try moving average version of variable.
         var_name = os.path.join(var_name, 'ExponentialMovingAverage')
@@ -115,9 +116,8 @@ class InitFromPretrainedCheckpointHook(session_run_hook.SessionRunHook):
     tf.logging.info('Done restoring InceptionV3 weights.')
 
 
-class BaseEstimator(object):
+class BaseEstimator(object, metaclass=ABCMeta):
   """Abstract TCN base estimator class."""
-  __metaclass__ = ABCMeta
 
   def __init__(self, config, logdir):
     """Constructor.
@@ -326,7 +326,7 @@ class BaseEstimator(object):
       if mode == tf.estimator.ModeKeys.PREDICT:
         predictions_dict = {'embeddings': batch_encoded}
         # Pass through additional metadata stored in features.
-        for k, v in features.iteritems():
+        for k, v in features.items():
           predictions_dict[k] = v
 
       # If we're evaluating, define some eval metrics.
@@ -503,7 +503,7 @@ class BaseEstimator(object):
         a TFRecord path, a list of TFRecord paths, or a numpy array,
     """
     # Mode 1: input is a callable tf.Estimator input_fn.
-    if callable(inference_input):
+    if isinstance(inference_input, collections.Callable):
       return self._input_fn_inference(
           input_fn=inference_input, checkpoint_path=checkpoint_path, **kwargs)
     # Mode 2: Input is a TFRecord path (or list of TFRecord paths).

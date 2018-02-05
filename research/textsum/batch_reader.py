@@ -68,12 +68,12 @@ class Batcher(object):
     self._input_queue = Queue.Queue(QUEUE_NUM_BATCH * self._hps.batch_size)
     self._bucket_input_queue = Queue.Queue(QUEUE_NUM_BATCH)
     self._input_threads = []
-    for _ in xrange(16):
+    for _ in range(16):
       self._input_threads.append(Thread(target=self._FillInputQueue))
       self._input_threads[-1].daemon = True
       self._input_threads[-1].start()
     self._bucketing_threads = []
-    for _ in xrange(4):
+    for _ in range(4):
       self._bucketing_threads.append(Thread(target=self._FillBucketInputQueue))
       self._bucketing_threads[-1].daemon = True
       self._bucketing_threads[-1].start()
@@ -111,7 +111,7 @@ class Batcher(object):
     origin_abstracts = ['None'] * self._hps.batch_size
 
     buckets = self._bucket_input_queue.get()
-    for i in xrange(self._hps.batch_size):
+    for i in range(self._hps.batch_size):
       (enc_inputs, dec_inputs, targets, enc_input_len, dec_output_len,
        article, abstract) = buckets[i]
 
@@ -122,7 +122,7 @@ class Batcher(object):
       enc_batch[i, :] = enc_inputs[:]
       dec_batch[i, :] = dec_inputs[:]
       target_batch[i, :] = targets[:]
-      for j in xrange(dec_output_len):
+      for j in range(dec_output_len):
         loss_weights[i][j] = 1
     return (enc_batch, dec_batch, target_batch, enc_input_lens, dec_output_lens,
             loss_weights, origin_articles, origin_abstracts)
@@ -145,10 +145,10 @@ class Batcher(object):
       dec_inputs = [start_id]
 
       # Convert first N sentences to word IDs, stripping existing <s> and </s>.
-      for i in xrange(min(self._max_article_sentences,
+      for i in range(min(self._max_article_sentences,
                           len(article_sentences))):
         enc_inputs += data.GetWordIds(article_sentences[i], self._vocab)
-      for i in xrange(min(self._max_abstract_sentences,
+      for i in range(min(self._max_abstract_sentences,
                           len(abstract_sentences))):
         dec_inputs += data.GetWordIds(abstract_sentences[i], self._vocab)
 
@@ -191,22 +191,24 @@ class Batcher(object):
       while len(targets) < self._hps.dec_timesteps:
         targets.append(end_id)
 
+      dec_article_sentences = [i.decode('utf-8') for i in article_sentences]
+      dec_abstract_sentences = [i.decode('utf-8') for i in abstract_sentences]
       element = ModelInput(enc_inputs, dec_inputs, targets, enc_input_len,
-                           dec_output_len, ' '.join(article_sentences),
-                           ' '.join(abstract_sentences))
+                           dec_output_len, ' '.join(dec_article_sentences),
+                           ' '.join(dec_abstract_sentences))
       self._input_queue.put(element)
 
   def _FillBucketInputQueue(self):
     """Fill bucketed batches into the bucket_input_queue."""
     while True:
       inputs = []
-      for _ in xrange(self._hps.batch_size * BUCKET_CACHE_BATCH):
+      for _ in range(self._hps.batch_size * BUCKET_CACHE_BATCH):
         inputs.append(self._input_queue.get())
       if self._bucketing:
         inputs = sorted(inputs, key=lambda inp: inp.enc_len)
 
       batches = []
-      for i in xrange(0, len(inputs), self._hps.batch_size):
+      for i in range(0, len(inputs), self._hps.batch_size):
         batches.append(inputs[i:i+self._hps.batch_size])
       shuffle(batches)
       for b in batches:

@@ -14,9 +14,9 @@
 # ==============================================================================
 
 """Tests for tcn.labeled_eval."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import numpy as np
 import labeled_eval
@@ -32,7 +32,7 @@ class LabeledEvalTest(tf.test.TestCase):
     num_tasks = 8
     n_neighbors = 2
     data = np.random.randn(num_data, embedding_size)
-    tasks = np.repeat(range(num_tasks), num_data // num_tasks)
+    tasks = np.repeat(list(range(num_tasks)), num_data // num_tasks)
 
     # Get nearest cross-sequence indices.
     indices = labeled_eval.nearest_cross_sequence_neighbors(
@@ -67,7 +67,7 @@ class LabeledEvalTest(tf.test.TestCase):
     num_data = 100
     num_tasks = 10
     embeddings = np.random.randn(100, 5)
-    tasks = np.repeat(range(num_tasks), num_data // num_tasks)
+    tasks = np.repeat(list(range(num_tasks)), num_data // num_tasks)
     labels = np.random.randint(0, 5, 100)
 
     k_list = [1, 2, 4, 8, 16, 32, 64]

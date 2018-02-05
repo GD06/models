@@ -22,6 +22,8 @@ import seq2seq_lib
 from six.moves import xrange
 import tensorflow as tf
 
+from cg_profiler.cg_graph import CompGraph
+
 HParams = namedtuple('HParams',
                      'mode, min_lr, lr, batch_size, '
                      'enc_layers, enc_timesteps, dec_timesteps, '
@@ -80,6 +82,34 @@ class Seq2SeqAttentionModel(object):
 
   def run_eval_step(self, sess, article_batch, abstract_batch, targets,
                     article_lens, abstract_lens, loss_weights):
+
+    feed_dict={self._articles: article_batch,
+            self._abstracts: abstract_batch,
+            self._targets: targets,
+            self._article_lens: article_lens,
+            self._abstract_lens: abstract_lens,
+            self._loss_weights: loss_weights}
+
+    options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+    run_metadata = tf.RunMetadata()
+
+    results = sess.run(self._loss, feed_dict=feed_dict, options=options,
+                       run_metadata=run_metadata)
+    cg = CompGraph('textsum', run_metadata, tf.get_default_graph())
+
+    cg_tensor_dict = cg.get_tensors()
+    cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    cg_sorted_items = []
+    for cg_key in cg_sorted_keys:
+      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+    cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
+    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                   'textsum.pickle')
+
+    print('Finished evaluation')
+    exit(0)
+
     to_return = [self._summaries, self._loss, self.global_step]
     return sess.run(to_return,
                     feed_dict={self._articles: article_batch,
@@ -155,7 +185,7 @@ class Seq2SeqAttentionModel(object):
         emb_decoder_inputs = [tf.nn.embedding_lookup(embedding, x)
                               for x in decoder_inputs]
 
-      for layer_i in xrange(hps.enc_layers):
+      for layer_i in range(hps.enc_layers):
         with tf.variable_scope('encoder%d'%layer_i), tf.device(
             self._next_device()):
           cell_fw = tf.contrib.rnn.LSTMCell(
@@ -207,7 +237,7 @@ class Seq2SeqAttentionModel(object):
 
       with tf.variable_scope('output'), tf.device(self._next_device()):
         model_outputs = []
-        for i in xrange(len(decoder_outputs)):
+        for i in range(len(decoder_outputs)):
           if i > 0:
             tf.get_variable_scope().reuse_variables()
           model_outputs.append(
@@ -255,7 +285,7 @@ class Seq2SeqAttentionModel(object):
     optimizer = tf.train.GradientDescentOptimizer(self._lr_rate)
     tf.summary.scalar('learning rate', self._lr_rate)
     self._train_op = optimizer.apply_gradients(
-        zip(grads, tvars), global_step=self.global_step, name='train_step')
+        list(zip(grads, tvars)), global_step=self.global_step, name='train_step')
 
   def encode_top_state(self, sess, enc_inputs, enc_len):
     """Return the top states from encoder for decoder.

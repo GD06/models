@@ -31,9 +31,9 @@ blaze-bin/$root/visualize_embeddings \
 blaze build third_party/tensorboard && \
 blaze-bin/third_party/tensorboard/tensorboard --logdir=$outdir
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import os
 import random
@@ -135,7 +135,7 @@ def main(_):
 
   num_embeddings = FLAGS.num_embed
   # Concatenate all views from all sequences into a big flat list.
-  for seqname, data in sequences_to_data.iteritems():
+  for seqname, data in sequences_to_data.items():
     embs = data['embeddings']
     ims = data['images']
     for v in range(config.data.num_views):
@@ -145,7 +145,7 @@ def main(_):
         all_seqnames.append(seqname)
 
   # Choose N indices uniformly from all images.
-  random_indices = range(all_embeddings.shape[0])
+  random_indices = list(range(all_embeddings.shape[0]))
   random.shuffle(random_indices)
   viz_indices = random_indices[:num_embeddings]
 

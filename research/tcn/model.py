@@ -14,9 +14,9 @@
 # ==============================================================================
 
 """Model implementations."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 from abc import ABCMeta
 from abc import abstractmethod
@@ -124,9 +124,8 @@ class InceptionBaselineEmbedder(object):
     self.embedding = embedding
 
 
-class PretrainedEmbedder(object):
+class PretrainedEmbedder(object, metaclass=ABCMeta):
   """Base class for embedders that take pre-trained networks as input."""
-  __metaclass__ = ABCMeta
 
   def __init__(self, config, images, embedding_size, is_training,
                embedding_l2=True, l2_reg_weight=1e-6, reuse=False):
@@ -259,8 +258,8 @@ class ResnetEmbedder(PretrainedEmbedder):
 
       # Define some adaptation blocks on top of the pre-trained resnet output.
       adaptation_blocks = []
-      adaptation_block_params = [map(
-          int, i.split('_')) for i in self._config.adaptation_blocks.split('-')]
+      adaptation_block_params = [list(map(
+          int, i.split('_'))) for i in self._config.adaptation_blocks.split('-')]
       for i, (depth, num_units) in enumerate(adaptation_block_params):
         block = resnet_v2.resnet_v2_block(
             'adaptation_block_%d' % i, base_depth=depth, num_units=num_units,
@@ -280,7 +279,7 @@ class ResnetEmbedder(PretrainedEmbedder):
         if fc_hidden_sizes == 'None':
           fc_hidden_sizes = []
         else:
-          fc_hidden_sizes = map(int, fc_hidden_sizes.split('_'))
+          fc_hidden_sizes = list(map(int, fc_hidden_sizes.split('_')))
         fc_hidden_keep_prob = self._config.dropout.keep_fc
         net = tf.squeeze(net)
         for fc_hidden_size in fc_hidden_sizes:

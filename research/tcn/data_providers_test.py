@@ -15,9 +15,9 @@
 
 """Tests for data_providers."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import numpy as np
 import data_providers
@@ -63,7 +63,7 @@ class DataTest(tf.test.TestCase):
       first = np_time_indices[0]
       last = np_time_indices[-1]
       # Make sure batch time indices are a contiguous range.
-      self.assertTrue(np.array_equal(np_time_indices, range(first, last+1)))
+      self.assertTrue(np.array_equal(np_time_indices, list(range(first, last+1))))
 
 if __name__ == "__main__":
   tf.test.main()

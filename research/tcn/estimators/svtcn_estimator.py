@@ -15,9 +15,9 @@
 
 """SVTCN estimator implementation."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import data_providers
 import model as model_module

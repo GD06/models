@@ -15,9 +15,9 @@
 
 """MVTCN trainer implementations with various metric learning losses."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import functools
 import data_providers

@@ -14,9 +14,9 @@
 # ==============================================================================
 
 """Calculates test sequence alignment score."""
-from __future__ import absolute_import
-from __future__ import absolute_import
-from __future__ import division
+
+
+
 
 import os
 import numpy as np
@@ -59,7 +59,7 @@ def compute_average_alignment(
   abs(|time_i - knn_time|) / sequence_length
   """
   all_alignments = []
-  for _, view_embeddings in seqname_to_embeddings.iteritems():
+  for _, view_embeddings in seqname_to_embeddings.items():
     for idx_i in range(num_views):
       for idx_j in range(idx_i+1, num_views):
         embeddings_view_i = view_embeddings[idx_i]
@@ -67,7 +67,7 @@ def compute_average_alignment(
 
         seq_len = len(embeddings_view_i)
 
-        times_i = np.array(range(seq_len))
+        times_i = np.array(list(range(seq_len)))
         # Get the nearest time_index for each embedding in view_i.
         times_j = np.array([util.KNNIdsWithDistances(
             q, embeddings_view_j, k=1)[0][0] for q in embeddings_view_i])
@@ -76,9 +76,9 @@ def compute_average_alignment(
         alignment = np.mean(
             np.abs(np.array(times_i)-np.array(times_j))/float(seq_len))
         all_alignments.append(alignment)
-        print 'alignment so far %f' % alignment
+        print('alignment so far %f' % alignment)
   average_alignment = np.mean(all_alignments)
-  print 'Average alignment %f' % average_alignment
+  print('Average alignment %f' % average_alignment)
   summ = tf.Summary(value=[tf.Summary.Value(
       tag='validation/alignment', simple_value=average_alignment)])
   summary_writer.add_summary(summ, int(training_step))

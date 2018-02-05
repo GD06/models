@@ -124,10 +124,10 @@ class BSDecoder(object):
     saver.restore(sess, ckpt_path)
 
     self._decode_io.ResetFiles()
-    for _ in xrange(FLAGS.decode_batches_per_ckpt):
+    for _ in range(FLAGS.decode_batches_per_ckpt):
       (article_batch, _, _, article_lens, _, _, origin_articles,
        origin_abstracts) = self._batch_reader.NextBatch()
-      for i in xrange(self._hps.batch_size):
+      for i in range(self._hps.batch_size):
         bs = beam_search.BeamSearch(
             self._model, self._hps.batch_size,
             self._vocab.WordToId(data.SENTENCE_START),

@@ -44,9 +44,9 @@ blaze-bin/learning/brain/research/tcn/generate_videos \
 --outdir $outdir \
 --num_multi_targets 1 \
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import cv2
 import tensorflow as tf
@@ -130,7 +130,7 @@ def MakeImitationVideo(
   if not tf.gfile.Exists(outdir):
     tf.gfile.MakeDirs(outdir)
   vid_path = os.path.join(outdir, vidname)
-  combined = zip(query_im_strs, knn_im_strs)
+  combined = list(zip(query_im_strs, knn_im_strs))
 
   # Create and write the video.
   fig = plt.figure()
@@ -218,8 +218,8 @@ def SingleImitationVideos(
   tview = FLAGS.target_view
 
   # Loop over query videos.
-  for task_i, data_i in query_sequences_to_data.iteritems():
-    for task_j, data_j in target_sequences_to_data.iteritems():
+  for task_i, data_i in query_sequences_to_data.items():
+    for task_j, data_j in target_sequences_to_data.items():
       i_ims = data_i['images']
       i_embs = data_i['embeddings']
       query_embs = SmoothEmbeddings(i_embs[qview])
@@ -262,7 +262,7 @@ def MultiImitationVideos(
   tview = FLAGS.target_view
 
   # Loop over query videos.
-  for task_i, data_i in query_sequences_to_data.iteritems():
+  for task_i, data_i in query_sequences_to_data.items():
     i_ims = data_i['images']
     i_embs = data_i['embeddings']
     query_embs = SmoothEmbeddings(i_embs[qview])
@@ -278,7 +278,7 @@ def MultiImitationVideos(
       # Else, add some specified number of seq embeddings to the target set.
       num_multi_targets = FLAGS.num_multi_targets
     for j in range(num_multi_targets):
-      task_j = target_sequences_to_data.keys()[j]
+      task_j = list(target_sequences_to_data.keys())[j]
       data_j = target_sequences_to_data[task_j]
       print('Adding %s to target set' % task_j)
       j_ims = data_j['images']
@@ -323,7 +323,7 @@ def SameSequenceVideos(query_records, config, height, width):
   # Loop over query videos.
   qview = FLAGS.query_view
   tview = FLAGS.target_view
-  for task_i, data_i in sequences_to_data.iteritems():
+  for task_i, data_i in sequences_to_data.items():
     ims = data_i['images']
     embs = data_i['embeddings']
     query_embs = SmoothEmbeddings(embs[qview])

@@ -113,7 +113,7 @@ class Operator:
                         'SquaredDifference', 'Abs', 'BatchMatMul', 'Concat',
                         'SparseToDense', 'Div', 'LogicalAnd', 'Tile', 'Relu6',
                         'DepthwiseConv2dNative', 'CropAndResize', 'FloorMod',
-                        'SpaceToBatchND', 'BatchToSpaceND'}
+                        'SpaceToBatchND', 'BatchToSpaceND', 'ReverseSequence'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
                           'SparseSoftmaxCrossEntropyWithLogits'}
@@ -184,7 +184,8 @@ class Operator:
                                 'Round', 'GatherV2', 'Square', 'Rsqrt', 'RefSwitch',
                                 'Abs', 'Slice', 'Concat', 'SparseToDense', 'Div',
                                 'LogicalAnd', 'Tile', 'CropAndResize', 'FloorMod',
-                                'SpaceToBatchND', 'BatchToSpaceND', 'DynamicStitch'})
+                                'SpaceToBatchND', 'BatchToSpaceND', 'DynamicStitch',
+                                'ReverseSequence'})
 
         # 2-type elementwise operator
         elementwise_op_set.append({'Relu6'})
@@ -261,7 +262,7 @@ class Operator:
                               'ScatterUpdate', 'Concat', 'SparseToDense', 'Div',
                               'LogicalAnd', 'Tile', 'Relu6', 'CropAndResize',
                               'FloorMod', 'SpaceToBatchND', 'BatchToSpaceND',
-                              'DynamicStitch'}
+                              'DynamicStitch', 'ReverseSequence'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean'}
 

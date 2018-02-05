@@ -60,7 +60,7 @@ class Vocab(object):
     if word not in self._word_to_id:
       return None
     return self._word_to_id[word]
-  
+
   def WordToId(self, word):
     if word not in self._word_to_id:
       return self._word_to_id[UNKNOWN_TOKEN]
@@ -186,7 +186,11 @@ def SnippetGen(text, start_tok, end_tok, inclusive=True):
   cur = 0
   while True:
     try:
+      if isinstance(start_tok, str):
+        start_tok = start_tok.encode('utf-8')
       start_p = text.index(start_tok, cur)
+      if isinstance(end_tok, str):
+        end_tok = end_tok.encode('utf-8')
       end_p = text.index(end_tok, start_p + 1)
       cur = end_p + len(end_tok)
       if inclusive:

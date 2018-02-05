@@ -14,9 +14,9 @@
 # ==============================================================================
 
 """Generates test Recall@K statistics on labeled classification problems."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 from collections import defaultdict
 import os
@@ -83,9 +83,9 @@ def nearest_cross_sequence_neighbors(data, tasks, n_neighbors=1):
   for idx in range(num_data):
     # Restrict to cross_sequence neighbors.
     distances = [(
-        pdist[idx][i], i) for i in xrange(num_data) if not_adjacent[idx][i]]
-    _, nearest_indices = zip(*sorted(
-        distances, key=lambda x: x[0])[:n_neighbors])
+        pdist[idx][i], i) for i in range(num_data) if not_adjacent[idx][i]]
+    _, nearest_indices = list(zip(*sorted(
+        distances, key=lambda x: x[0])[:n_neighbors]))
     indices[idx] = nearest_indices
   return indices
 
@@ -106,7 +106,7 @@ def compute_cross_sequence_recall_at_k(retrieved_labels, labels, k_list):
   Returns:
     recall_list: List of recall@k values.
   """
-  kvalue_to_recall = dict(zip(k_list, np.zeros(len(k_list))))
+  kvalue_to_recall = dict(list(zip(k_list, np.zeros(len(k_list)))))
 
   # For each value of K.
   for k in k_list:

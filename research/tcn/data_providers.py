@@ -14,9 +14,9 @@
 # ==============================================================================
 
 """Defines data providers used in training and evaluating TCNs."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import functools
 import random
@@ -157,7 +157,7 @@ def parse_sequence_example(serialized_example, num_views):
   fixed_features = [
       tf.FixedLenSequenceFeature(
           shape=[], dtype=tf.string) for _ in range(len(view_names))]
-  sequence_features = dict(zip(view_names, fixed_features))
+  sequence_features = dict(list(zip(view_names, fixed_features)))
   context_parse, sequence_parse = tf.parse_single_sequence_example(
       serialized=serialized_example,
       context_features=context_features,
