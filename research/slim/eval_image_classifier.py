@@ -14,9 +14,9 @@
 # ==============================================================================
 """Generic evaluation script that evaluates a model using a given dataset."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import math
 import tensorflow as tf
@@ -24,6 +24,8 @@ import tensorflow as tf
 from datasets import dataset_factory
 from nets import nets_factory
 from preprocessing import preprocessing_factory
+
+from cg_profiler.cg_graph import CompGraph
 
 slim = tf.contrib.slim
 
@@ -153,12 +155,12 @@ def main(_):
     # Define the metrics:
     names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
         'Accuracy': slim.metrics.streaming_accuracy(predictions, labels),
-        'Recall_5': slim.metrics.streaming_recall_at_k(
-            logits, labels, 5),
+        #'Recall_5': slim.metrics.streaming_recall_at_k(
+        #    logits, labels, 5),
     })
 
     # Print the summaries to screen.
-    for name, value in names_to_values.items():
+    for name, value in list(names_to_values.items()):
       summary_name = 'eval/%s' % name
       op = tf.summary.scalar(summary_name, value, collections=[])
       op = tf.Print(op, [value], summary_name)
@@ -178,13 +180,44 @@ def main(_):
 
     tf.logging.info('Evaluating %s' % checkpoint_path)
 
-    slim.evaluation.evaluate_once(
-        master=FLAGS.master,
-        checkpoint_path=checkpoint_path,
-        logdir=FLAGS.eval_dir,
-        num_evals=num_batches,
-        eval_op=list(names_to_updates.values()),
-        variables_to_restore=variables_to_restore)
+    sess = tf.Session()
+    saver = tf.train.Saver()
+    saver.restore(sess, checkpoint_path)
+
+    tf.train.start_queue_runners(sess=sess)
+
+    init = tf.global_variables_initializer()
+    sess.run(init)
+    init = tf.local_variables_initializer()
+    sess.run(init)
+
+    options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+    run_metadata = tf.RunMetadata()
+
+    sess.run(list(names_to_updates.values()), options=options,
+             run_metadata=run_metadata)
+    model_name = 'slim_{}'.format(FLAGS.model_name)
+    cg = CompGraph(model_name, run_metadata, tf.get_default_graph())
+
+    cg_tensor_dict = cg.get_tensors()
+    cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    cg_sorted_items = []
+    for cg_key in cg_sorted_keys:
+      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+    cg_sorted_shape = sess.run(cg_sorted_items)
+    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                   '{}.pickle'.format(model_name))
+
+    exit(0)
+
+    #slim.evaluation.evaluate_once(
+    #    master=FLAGS.master,
+    #    checkpoint_path=checkpoint_path,
+    #    logdir=FLAGS.eval_dir,
+    #    num_evals=num_batches,
+    #    eval_op=list(names_to_updates.values()),
+    #    variables_to_restore=variables_to_restore)
 
 
 if __name__ == '__main__':
