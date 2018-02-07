@@ -376,7 +376,7 @@ def convnet(input_,
 
     bias = (not use_batch_norm)
     with tf.variable_scope(name):
-        for layer_idx in xrange(len(dim_hid)):
+        for layer_idx in range(len(dim_hid)):
             res = conv_layer(
                 input_=res,
                 filter_size=filter_sizes[layer_idx],
@@ -438,21 +438,21 @@ def squeeze_2x2_ordered(input_, reverse=False):
     if reverse:
         if channels % 4 != 0:
             raise ValueError("Number of channels not divisible by 4.")
-        channels /= 4
+        channels //= 4
     else:
         if height % 2 != 0:
             raise ValueError("Height not divisible by 2.")
         if width % 2 != 0:
             raise ValueError("Width not divisible by 2.")
     weights = numpy.zeros((2, 2, channels, 4 * channels))
-    for idx_ch in xrange(channels):
+    for idx_ch in range(channels):
         slice_2 = slice(idx_ch, (idx_ch + 1))
         slice_3 = slice((idx_ch * 4), ((idx_ch + 1) * 4))
         weights[:, :, slice_2, slice_3] = SQUEEZE_MATRIX
-    shuffle_channels = [idx_ch * 4 for idx_ch in xrange(channels)]
-    shuffle_channels += [idx_ch * 4 + 1 for idx_ch in xrange(channels)]
-    shuffle_channels += [idx_ch * 4 + 2 for idx_ch in xrange(channels)]
-    shuffle_channels += [idx_ch * 4 + 3 for idx_ch in xrange(channels)]
+    shuffle_channels = [idx_ch * 4 for idx_ch in range(channels)]
+    shuffle_channels += [idx_ch * 4 + 1 for idx_ch in range(channels)]
+    shuffle_channels += [idx_ch * 4 + 2 for idx_ch in range(channels)]
+    shuffle_channels += [idx_ch * 4 + 3 for idx_ch in range(channels)]
     shuffle_channels = numpy.array(shuffle_channels)
     weights = weights[:, :, :, shuffle_channels].astype("float32")
     if reverse:

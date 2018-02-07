@@ -32,7 +32,7 @@ _OUTPUT_DIR = "data/fsns"
 
 def fsns_paths():
   paths = ['charset_size=134.txt']
-  for name, shards in _SHARDS.items():
+  for name, shards in list(_SHARDS.items()):
     for i in range(shards):
       paths.append('%s/%s-%05d-of-%05d' % (name, name, i, shards))
   return paths
@@ -45,5 +45,5 @@ if __name__ == "__main__":
       dst_path = os.path.join(_OUTPUT_DIR, path)
       f.write("%s\n  out=%s\n" % (url, dst_path))
   print("To download FSNS dataset execute:")
-  print("aria2c -c -j 20 -i %s" % _OUTPUT_FILE)
-  print("The downloaded FSNS dataset will be stored under %s" % _OUTPUT_DIR)
+  print(("aria2c -c -j 20 -i %s" % _OUTPUT_FILE))
+  print(("The downloaded FSNS dataset will be stored under %s" % _OUTPUT_DIR))

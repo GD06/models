@@ -19,7 +19,7 @@ See vglspecs.md for detailed description.
 """
 
 import re
-from string import maketrans
+#from string import maketrans
 
 import nn_ops
 import shapes
@@ -57,7 +57,7 @@ class VGSLSpecs(object):
                       self.AddFCLayer, self.AddLSTMLayer]
     # Translation table to convert unacceptable characters that may occur
     # in op strings that cannot be used as names.
-    self.transtab = maketrans('(,)', '___')
+    self.transtab = self.transtab.maketrans('(,)', '___')
 
   def Build(self, prev_layer, model_str):
     """Builds a network with input prev_layer from a VGSLSpecs description.
@@ -337,7 +337,7 @@ class VGSLSpecs(object):
         prev_layer, src_dim, part_a, part_b, dest_dim_a, dest_dim_b, name=name)
     # Compute scale factors.
     result_shape = tf.shape(layer)
-    for i in xrange(len(self.reduction_factors)):
+    for i in range(len(self.reduction_factors)):
       if self.reduction_factors[i] is not None:
         factor1 = tf.cast(self.reduction_factors[i], tf.float32)
         factor2 = tf.cast(prev_shape[i], tf.float32)

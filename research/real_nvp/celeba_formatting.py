@@ -70,7 +70,7 @@ def main():
     writer = tf.python_io.TFRecordWriter(file_out)
     for example_idx, img_fn in enumerate(img_fn_list):
         if example_idx % 1000 == 0:
-            print example_idx, "/", num_examples
+            print(example_idx, "/", num_examples)
         image_raw = scipy.ndimage.imread(os.path.join(fn_root, img_fn))
         rows = image_raw.shape[0]
         cols = image_raw.shape[1]

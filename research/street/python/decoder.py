@@ -83,7 +83,7 @@ class Decoder(object):
     total_label_counts = ec.ErrorCounts(0, 0, 0, 0)
     total_word_counts = ec.ErrorCounts(0, 0, 0, 0)
     sequence_errors = 0
-    for _ in xrange(num_steps):
+    for _ in range(num_steps):
       softmax_result, labels = model.RunAStep(sess)
       # Collapse softmax to same shape as labels.
       predictions = softmax_result.argmax(axis=-1)
@@ -91,7 +91,7 @@ class Decoder(object):
       num_dims = len(predictions.shape) - 1
       batch_size = predictions.shape[0]
       null_label = softmax_result.shape[-1] - 1
-      for b in xrange(batch_size):
+      for b in range(batch_size):
         if num_dims == 2:
           # TODO(rays) Support 2-d data.
           raise ValueError('2-d label data not supported yet!')
@@ -148,7 +148,7 @@ class Decoder(object):
     # Warning: memory is squared-order in length.
     strings = []
     partials = []
-    for pos in xrange(length):
+    for pos in range(length):
       code = codes[pos]
       parts = self.decoder[code]
       partials.append([])

@@ -65,8 +65,8 @@ def CountErrors(ocr_text, truth_text):
   """
   counts = collections.Counter(truth_text)
   counts.subtract(ocr_text)
-  drops = sum(c for c in counts.values() if c > 0)
-  adds = sum(-c for c in counts.values() if c < 0)
+  drops = sum(c for c in list(counts.values()) if c > 0)
+  adds = sum(-c for c in list(counts.values()) if c < 0)
   return ErrorCounts(drops, adds, len(truth_text), len(ocr_text))
 
 

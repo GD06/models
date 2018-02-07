@@ -170,7 +170,7 @@ def Eval(train_dir,
           _AddRateToSummary('Sequence error rate', rates.sequence_error, step,
                             sw)
           sw.flush()
-          print 'Error rates=', rates
+          print('Error rates=', rates)
         else:
           raise ValueError('Non-softmax decoder evaluation not implemented!')
       if eval_interval_secs:

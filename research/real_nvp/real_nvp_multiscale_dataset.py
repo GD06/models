@@ -27,12 +27,14 @@ import time
 from datetime import datetime
 import os
 
+from cg_profiler.cg_graph import CompGraph
+
 import numpy
 import tensorflow as tf
 
 from tensorflow import gfile
 
-from real_nvp_utils import (
+from real_nvp.real_nvp_utils import (
     batch_norm, batch_norm_log_diff, conv_layer,
     squeeze_2x2, squeeze_2x2_ordered, standard_normal_ll,
     standard_normal_sample, unsqueeze_2x2, variable_on_cpu)
@@ -209,7 +211,7 @@ def resnet(input_, dim_in, dim, dim_out, name, use_batch_norm=True,
                     weight_norm=weight_norm, scale=True)
 
             # residual blocks
-            for idx_block in xrange(residual_blocks):
+            for idx_block in range(residual_blocks):
                 res = residual_block(res, dim, "block_%d" % idx_block,
                                      use_batch_norm=use_batch_norm, train=train,
                                      weight_norm=weight_norm,
@@ -1127,7 +1129,7 @@ class RealNVP(object):
         grads_and_vars = optimizer.compute_gradients(
             cost + hps.l2_coeff * l2_reg,
             tf.trainable_variables())
-        grads, vars_ = zip(*grads_and_vars)
+        grads, vars_ = list(zip(*grads_and_vars))
         capped_grads, gradient_norm = tf.clip_by_global_norm(
             grads, clip_norm=hps.clip_gradient)
         gradient_norm = tf.check_numerics(gradient_norm,
@@ -1155,7 +1157,7 @@ class RealNVP(object):
                            - tf.square(tf.reduce_mean(l2_z)), []))
 
 
-        capped_grads_and_vars = zip(capped_grads, vars_)
+        capped_grads_and_vars = list(zip(capped_grads, vars_))
         self.train_step = optimizer.apply_gradients(
             capped_grads_and_vars, global_step=step)
 
@@ -1303,12 +1305,12 @@ class RealNVP(object):
             z_compressed_list = [z_complete]
             z_noisy_list = [z_complete]
             z_lost = z_complete
-            for scale_idx in xrange(hps.n_scale - 1):
+            for scale_idx in range(hps.n_scale - 1):
                 z_lost = squeeze_2x2_ordered(z_lost)
                 z_lost, _ = tf.split(axis=3, num_or_size_splits=2, value=z_lost)
                 z_compressed = z_lost
                 z_noisy = z_lost
-                for _ in xrange(scale_idx + 1):
+                for _ in range(scale_idx + 1):
                     z_compressed = tf.concat(
                         [z_compressed, tf.zeros_like(z_compressed)], 3)
                     z_compressed = squeeze_2x2_ordered(
@@ -1426,19 +1428,39 @@ class RealNVP(object):
             num_examples_eval = n_eval_dict[FLAGS.dataset]
         else:
             num_examples_eval = FLAGS.eval_set_size
-        n_epoch = num_examples_eval / hps.batch_size
+        n_epoch = num_examples_eval // hps.batch_size
         eval_costs = []
         bar_len = 70
-        for epoch_idx in xrange(n_epoch):
+        for epoch_idx in range(n_epoch):
             n_equal = epoch_idx * bar_len * 1. / n_epoch
             n_equal = numpy.ceil(n_equal)
             n_equal = int(n_equal)
             n_dash = bar_len - n_equal
             progress_bar = "[" + "=" * n_equal + "-" * n_dash + "]\r"
-            print progress_bar,
-            cost = self.bit_per_dim.eval()
+            print(progress_bar, end=' ')
+
+            sess = tf.get_default_session()
+            options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+            run_metadata = tf.RunMetadata()
+
+            cost = sess.run(self.bit_per_dim, options=options,
+                            run_metadata=run_metadata)
+            cg = CompGraph('real_nvp', run_metadata, tf.get_default_graph())
+
+            cg_tensor_dict = cg.get_tensors()
+            cg_sorted_keys = sorted(cg_tensor_dict.keys())
+            cg_sorted_items = []
+            for cg_key in cg_sorted_keys:
+              cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+            cg_sorted_shape = sess.run(cg_sorted_items)
+            cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                           'real_nvp.pickle')
+
+            exit(0)
+            #cost = self.bit_per_dim.eval()
             eval_costs.append(cost)
-        print ""
+        print("")
         return float(numpy.mean(eval_costs))
 
 
@@ -1467,7 +1489,7 @@ def train_model(hps, logdir):
 
             ckpt_state = tf.train.get_checkpoint_state(logdir)
             if ckpt_state and ckpt_state.model_checkpoint_path:
-                print "Loading file %s" % ckpt_state.model_checkpoint_path
+                print("Loading file %s" % ckpt_state.model_checkpoint_path)
                 saver.restore(sess, ckpt_state.model_checkpoint_path)
 
             # Start the queue runners.
@@ -1499,15 +1521,15 @@ def train_model(hps, logdir):
                     format_str = ('%s: step %d, loss = %.2f '
                                   '(%.1f examples/sec; %.3f '
                                   'sec/batch)')
-                    print format_str % (datetime.now(), global_step_val, loss,
-                                        examples_per_sec, duration)
+                    print(format_str % (datetime.now(), global_step_val, loss,
+                                        examples_per_sec, duration))
 
                 if should_eval_summaries:
                     summary_str = outputs[-1]
                     summary_writer.add_summary(summary_str, global_step_val)
 
                 # Save the model checkpoint periodically.
-                if local_step % 1000 == 0 or (local_step + 1) == FLAGS.train_steps:
+                if local_step % 50 == 0 or (local_step + 1) == FLAGS.train_steps:
                     checkpoint_path = os.path.join(logdir, 'model.ckpt')
                     saver.save(
                         sess,
@@ -1542,24 +1564,24 @@ def evaluate(hps, logdir, traindir, subset="valid", return_val=False):
                 while True:
                     ckpt_state = tf.train.get_checkpoint_state(traindir)
                     if not (ckpt_state and ckpt_state.model_checkpoint_path):
-                        print "No model to eval yet at %s" % traindir
+                        print("No model to eval yet at %s" % traindir)
                         time.sleep(30)
                         continue
-                    print "Loading file %s" % ckpt_state.model_checkpoint_path
+                    print("Loading file %s" % ckpt_state.model_checkpoint_path)
                     saver.restore(sess, ckpt_state.model_checkpoint_path)
 
                     current_step = tf.train.global_step(sess, eval_model.step)
                     if current_step == previous_global_step:
-                        print "Waiting for the checkpoint to be updated."
+                        print("Waiting for the checkpoint to be updated.")
                         time.sleep(30)
                         continue
                     previous_global_step = current_step
 
-                    print "Evaluating..."
+                    print("Evaluating...")
                     bit_per_dim = eval_model.eval_epoch(hps)
-                    print ("Epoch: %d, %s -> %.3f bits/dim"
-                           % (current_step, subset, bit_per_dim))
-                    print "Writing summary..."
+                    print(("Epoch: %d, %s -> %.3f bits/dim"
+                           % (current_step, subset, bit_per_dim)))
+                    print("Writing summary...")
                     summary = tf.Summary()
                     summary.value.extend(
                         [tf.Summary.Value(
@@ -1597,17 +1619,17 @@ def sample_from_model(hps, logdir, traindir):
                     ckpt_state = tf.train.get_checkpoint_state(traindir)
                     if not (ckpt_state and ckpt_state.model_checkpoint_path):
                         if not initialized:
-                            print "No model to eval yet at %s" % traindir
+                            print("No model to eval yet at %s" % traindir)
                             time.sleep(30)
                             continue
                     else:
-                        print ("Loading file %s"
-                               % ckpt_state.model_checkpoint_path)
+                        print(("Loading file %s"
+                               % ckpt_state.model_checkpoint_path))
                         saver.restore(sess, ckpt_state.model_checkpoint_path)
 
                     current_step = tf.train.global_step(sess, eval_model.step)
                     if current_step == previous_global_step:
-                        print "Waiting for the checkpoint to be updated."
+                        print("Waiting for the checkpoint to be updated.")
                         time.sleep(30)
                         continue
                     previous_global_step = current_step

@@ -44,10 +44,10 @@ def rotate_dimensions(num_dims, src_dim, dest_dim):
     A list of rotated dimension indices.
   """
   # List of dimensions for transpose.
-  dim_list = range(num_dims)
+  dim_list = list(range(num_dims))
   # Shuffle src_dim to dest_dim by swapping to shuffle up the other dims.
   step = 1 if dest_dim > src_dim else -1
-  for x in xrange(src_dim, dest_dim, step):
+  for x in range(src_dim, dest_dim, step):
     dim_list[x], dim_list[x + step] = dim_list[x + step], dim_list[x]
   return dim_list
 
@@ -211,6 +211,6 @@ def tensor_shape(tensor):
     A heterogeneous list of integers and int32 tensors.
   """
   result = []
-  for d in xrange(len(tensor.get_shape())):
+  for d in range(len(tensor.get_shape())):
     result.append(tensor_dim(tensor, d))
   return result
