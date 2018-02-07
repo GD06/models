@@ -14,9 +14,9 @@
 # ==============================================================================
 """Tests for tensorflow_models.skip_thoughts.skip_thoughts_model."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 
 import numpy as np
@@ -96,7 +96,7 @@ class SkipThoughtsModelTest(tf.test.TestCase):
         shape.
       feed_dict: Values of Tensors to feed into Session.run().
     """
-    fetches = expected_shapes.keys()
+    fetches = list(expected_shapes.keys())
 
     with self.test_session() as sess:
       sess.run(tf.global_variables_initializer())

@@ -34,9 +34,9 @@ This is based on the "Translation Matrix" method from the paper:
   https://arxiv.org/abs/1309.4168
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import collections
 import os.path
@@ -187,13 +187,13 @@ def main(unused_argv):
                                      word2vec)
 
   # Save the output.
-  vocab = embedding_map.keys()
+  vocab = list(embedding_map.keys())
   vocab_file = os.path.join(FLAGS.output_dir, "vocab.txt")
   with tf.gfile.GFile(vocab_file, "w") as f:
     f.write("\n".join(vocab))
   tf.logging.info("Wrote vocabulary file to %s", vocab_file)
 
-  embeddings = np.array(embedding_map.values())
+  embeddings = np.array(list(embedding_map.values()))
   embeddings_file = os.path.join(FLAGS.output_dir, "embeddings.npy")
   np.save(embeddings_file, embeddings)
   tf.logging.info("Wrote embeddings file to %s", embeddings_file)

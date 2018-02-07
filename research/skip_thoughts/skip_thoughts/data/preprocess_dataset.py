@@ -31,9 +31,9 @@ The vocabulary of word ids is constructed from the top --num_words by word
 count. All other words get the <unk> word id.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import collections
 import os
@@ -121,8 +121,8 @@ def _build_vocabulary(input_files):
 
   tf.logging.info("Processed %d sentences total", num)
 
-  words = wordcount.keys()
-  freqs = wordcount.values()
+  words = list(wordcount.keys())
+  freqs = list(wordcount.values())
   sorted_indices = np.argsort(freqs)[::-1]
 
   vocab = collections.OrderedDict()
@@ -135,7 +135,7 @@ def _build_vocabulary(input_files):
 
   vocab_file = os.path.join(FLAGS.output_dir, "vocab.txt")
   with tf.gfile.FastGFile(vocab_file, "w") as f:
-    f.write("\n".join(vocab.keys()))
+    f.write("\n".join(list(vocab.keys())))
   tf.logging.info("Wrote vocab file to %s", vocab_file)
 
   word_counts_file = os.path.join(FLAGS.output_dir, "word_counts.txt")
@@ -283,7 +283,7 @@ def main(unused_argv):
       break
 
   tf.logging.info("Generated dataset with %d sentences.", len(dataset))
-  for k, v in stats.items():
+  for k, v in list(stats.items()):
     tf.logging.info("%s: %d", k, v)
 
   tf.logging.info("Shuffling dataset.")

@@ -44,6 +44,9 @@ class CompGraph:
                             tensor_dict[input_tensor.name] = input_tensor
                         for output_tensor in tf_repr.outputs:
                             tensor_dict[output_tensor.name] = output_tensor
+                    #else:
+                    #    print('Aid op name: {}, op_type: {}'.format(
+                    #            op.op_name, op.op_type))
 
                 except Exception as excep:
                     # the log should be further redirected to LOG files

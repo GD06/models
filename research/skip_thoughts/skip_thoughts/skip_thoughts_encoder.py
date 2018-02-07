@@ -25,9 +25,9 @@ Example usage:
     skip_thought_vectors = encoder.encode(sess, data)
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import os.path
 
@@ -40,6 +40,7 @@ import tensorflow as tf
 from skip_thoughts import skip_thoughts_model
 from skip_thoughts.data import special_words
 
+from cg_profiler.cg_graph import CompGraph
 
 def _pad(seq, target_len):
   """Pads a sequence of word embeddings up to the target length.
@@ -94,7 +95,7 @@ def _batch_and_pad(sequences):
 class SkipThoughtsEncoder(object):
   """Skip-thoughts sentence encoder."""
 
-  def __init__(self, embeddings):
+  def __init__(self, embeddings, model_name="skip_thoughts"):
     """Initializes the encoder.
 
     Args:
@@ -102,6 +103,7 @@ class SkipThoughtsEncoder(object):
     """
     self._sentence_detector = nltk.data.load("tokenizers/punkt/english.pickle")
     self._embeddings = embeddings
+    self._model_name = model_name
 
   def _create_restore_fn(self, checkpoint_path, saver):
     """Creates a function that restores a model from checkpoint.
@@ -235,6 +237,8 @@ class SkipThoughtsEncoder(object):
       thought_vectors: A list of numpy arrays corresponding to the skip-thought
         encodings of sentences in 'data'.
     """
+    print("Current model: ", self._model_name)
+
     data = self._preprocess(data, use_eos)
     thought_vectors = []
 
@@ -249,8 +253,26 @@ class SkipThoughtsEncoder(object):
           "encode_emb:0": embeddings,
           "encode_mask:0": mask,
       }
-      thought_vectors.extend(
-          sess.run("encoder/thought_vectors:0", feed_dict=feed_dict))
+
+      options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+      run_metadata = tf.RunMetadata()
+      results = sess.run("encoder/thought_vectors:0", feed_dict=feed_dict,
+                         options=options, run_metadata=run_metadata)
+      cg = CompGraph(self._model_name, run_metadata, sess.graph)
+
+      cg_tensor_dict = cg.get_tensors()
+      cg_sorted_keys = sorted(cg_tensor_dict.keys())
+      cg_sorted_items = []
+      for cg_key in cg_sorted_keys:
+        cg_sorted_items.append(cg_tensor_dict[cg_key].shape)
+
+      #cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
+      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_items)),
+                     '{}.pickle'.format(self._model_name))
+
+      exit(0)
+      #thought_vectors.extend(
+      #    sess.run("encoder/thought_vectors:0", feed_dict=feed_dict))
 
     if use_norm:
       thought_vectors = [v / np.linalg.norm(v) for v in thought_vectors]

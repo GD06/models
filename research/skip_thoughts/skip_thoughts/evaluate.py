@@ -29,9 +29,9 @@ The evaluation tasks have different running times. SICK may take 5-10 minutes.
 MSRP, TREC and CR may take 20-60 minutes. SUBJ, MPQA and MR may take 2+ hours.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 
 from skipthoughts import eval_classification

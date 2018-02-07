@@ -28,9 +28,9 @@ Layer normalization is applied based on the paper:
   https://arxiv.org/abs/1607.06450
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 
 import tensorflow as tf

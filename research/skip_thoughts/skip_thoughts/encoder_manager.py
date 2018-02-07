@@ -26,9 +26,9 @@ Example usage:
   encodings = manager.encode(data)
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import collections
 
@@ -42,9 +42,10 @@ from skip_thoughts import skip_thoughts_encoder
 class EncoderManager(object):
   """Manager class for loading and encoding with skip-thoughts models."""
 
-  def __init__(self):
+  def __init__(self, model_name="skip_thoughts"):
     self.encoders = []
     self.sessions = []
+    self.model_name = model_name
 
   def load_model(self, model_config, vocabulary_file, embedding_matrix_file,
                  checkpoint_path):
@@ -63,23 +64,24 @@ class EncoderManager(object):
     tf.logging.info("Reading vocabulary from %s", vocabulary_file)
     with tf.gfile.GFile(vocabulary_file, mode="r") as f:
       lines = list(f.readlines())
-    reverse_vocab = [line.decode("utf-8").strip() for line in lines]
+    reverse_vocab = [line.strip() for line in lines]
     tf.logging.info("Loaded vocabulary with %d words.", len(reverse_vocab))
 
     tf.logging.info("Loading embedding matrix from %s", embedding_matrix_file)
     # Note: tf.gfile.GFile doesn't work here because np.load() calls f.seek()
     # with 3 arguments.
-    with open(embedding_matrix_file, "r") as f:
+    with open(embedding_matrix_file, "rb") as f:
       embedding_matrix = np.load(f)
     tf.logging.info("Loaded embedding matrix with shape %s",
                     embedding_matrix.shape)
 
     word_embeddings = collections.OrderedDict(
-        zip(reverse_vocab, embedding_matrix))
+        list(zip(reverse_vocab, embedding_matrix)))
 
     g = tf.Graph()
     with g.as_default():
-      encoder = skip_thoughts_encoder.SkipThoughtsEncoder(word_embeddings)
+      encoder = skip_thoughts_encoder.SkipThoughtsEncoder(word_embeddings,
+                                                          self.model_name)
       restore_model = encoder.build_graph_from_config(model_config,
                                                       checkpoint_path)
 

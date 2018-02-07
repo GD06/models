@@ -18,9 +18,9 @@ This script should be run concurrently with training so that summaries show up
 in TensorBoard.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 from six.moves import range
 

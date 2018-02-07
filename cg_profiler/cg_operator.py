@@ -113,7 +113,8 @@ class Operator:
                         'SquaredDifference', 'Abs', 'BatchMatMul', 'Concat',
                         'SparseToDense', 'Div', 'LogicalAnd', 'Tile', 'Relu6',
                         'DepthwiseConv2dNative', 'CropAndResize', 'FloorMod',
-                        'SpaceToBatchND', 'BatchToSpaceND', 'ReverseSequence'}
+                        'SpaceToBatchND', 'BatchToSpaceND', 'ReverseSequence',
+                        'All'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
                           'SparseSoftmaxCrossEntropyWithLogits'}
@@ -193,7 +194,8 @@ class Operator:
         # 3-type elementwise operator
         elementwise_op_set.append({'SquaredDifference', 'Softplus'})
 
-        reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'ReduceJoin', 'Mean'}
+        reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'ReduceJoin', 'Mean',
+                         'All'}
 
         pooling_op_set = {'MaxPool', 'AvgPool'}
 
@@ -264,7 +266,7 @@ class Operator:
                               'FloorMod', 'SpaceToBatchND', 'BatchToSpaceND',
                               'DynamicStitch', 'ReverseSequence'}
 
-        reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean'}
+        reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean', 'All'}
 
         pooling_op_set = {'MaxPool', 'AvgPool'}
 
