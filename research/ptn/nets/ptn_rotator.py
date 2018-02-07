@@ -19,9 +19,9 @@ This model performs the out-of-plane rotations given input image and action.
 The action is either no-op, rotate clockwise or rotate counter-clockwise.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import tensorflow as tf
 

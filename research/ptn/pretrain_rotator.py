@@ -14,9 +14,9 @@
 # ==============================================================================
 
 """Contains training plan for the Rotator model (Pretraining in NIPS16)."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import os
 
@@ -163,8 +163,8 @@ def main(_):
             vis_list_2 = []
             vis_list_3 = []
             vis_list_4 = []
-            for j in xrange(rep_times):
-              for k in xrange(FLAGS.step_size):
+            for j in range(rep_times):
+              for k in range(FLAGS.step_size):
                 vis_input_image = val_inputs['images_0'][j],
                 vis_output_image = val_inputs['images_%d' % (k + 1)][j]
                 vis_pred_image = val_outputs['images_%d' % (k + 1)][j]

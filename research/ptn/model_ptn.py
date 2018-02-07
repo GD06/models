@@ -14,9 +14,9 @@
 # ==============================================================================
 
 """Implementations for Im2Vox PTN (NIPS16) model."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import os
 
@@ -45,11 +45,11 @@ class model_PTN(model_voxel_generation.Im2Vox):  # pylint:disable=invalid-name
     inputs = dict()
     inputs['voxels'] = []
     inputs['images_1'] = []
-    for k in xrange(num_views):
+    for k in range(num_views):
       inputs['matrix_%d' % (k + 1)] = []
     inputs['matrix_1'] = []
-    for n in xrange(quantity):
-      for k in xrange(num_views):
+    for n in range(quantity):
+      for k in range(num_views):
         inputs['images_1'].append(raw_inputs['images'][n, k, :, :, :])
         inputs['voxels'].append(raw_inputs['voxels'][n, :, :, :, :])
         tf_matrix = self.get_transform_matrix(k)
@@ -57,7 +57,7 @@ class model_PTN(model_voxel_generation.Im2Vox):  # pylint:disable=invalid-name
 
     inputs['images_1'] = tf.stack(inputs['images_1'])
     inputs['voxels'] = tf.stack(inputs['voxels'])
-    for k in xrange(num_views):
+    for k in range(num_views):
       inputs['matrix_%d' % (k + 1)] = tf.stack(inputs['matrix_%d' % (k + 1)])
 
     return inputs
@@ -103,7 +103,7 @@ class model_PTN(model_voxel_generation.Im2Vox):  # pylint:disable=invalid-name
     names_to_values.update(tmp_values)
     names_to_updates.update(tmp_updates)
 
-    for name, value in names_to_values.iteritems():
+    for name, value in names_to_values.items():
       slim.summaries.add_scalar_summary(
           value, name, prefix='eval', print_summary=True)
 
@@ -201,8 +201,8 @@ def _build_image_grid(input_images,
   """Builds a grid image by concatenating the input images."""
   quantity = input_images.shape[0]
 
-  for row in xrange(int(quantity / 3)):
-    for col in xrange(3):
+  for row in range(int(quantity / 3)):
+    for col in range(3):
       index = row * 3 + col
       input_img_ = utils.resize_image(input_images[index, :, :, :], vis_size,
                                       vis_size)

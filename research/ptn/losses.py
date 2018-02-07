@@ -15,9 +15,9 @@
 
 """Defines the various loss functions in use by the PTN model."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import tensorflow as tf
 
@@ -166,9 +166,9 @@ def regularization_loss(scopes, params):
     is_trainable = lambda x: x in tf.trainable_variables()
     is_weights = lambda x: 'weights' in x.name
     for scope in scopes:
-      scope_vars = filter(is_trainable,
-                          tf.contrib.framework.get_model_variables(scope))
-      scope_vars = filter(is_weights, scope_vars)
+      scope_vars = list(filter(is_trainable,
+                          tf.contrib.framework.get_model_variables(scope)))
+      scope_vars = list(filter(is_weights, scope_vars))
       if scope_vars:
         reg_loss += tf.add_n([tf.nn.l2_loss(var) for var in scope_vars])
 

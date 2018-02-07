@@ -15,9 +15,9 @@
 
 """Provides metrics used by PTN."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import tensorflow as tf
 
@@ -44,7 +44,7 @@ def add_image_pred_metrics(
   """
   names_to_values = dict()
   names_to_updates = dict()
-  for k in xrange(num_views):
+  for k in range(num_views):
     tmp_value, tmp_update = tf.contrib.metrics.streaming_mean_squared_error(
         outputs['images_%d' % (k + 1)], inputs['images_%d' % (k + 1)])
     name = 'image_pred/rnn_%d' % (k + 1)
@@ -74,7 +74,7 @@ def add_mask_pred_metrics(
   """
   names_to_values = dict()
   names_to_updates = dict()
-  for k in xrange(num_views):
+  for k in range(num_views):
     tmp_value, tmp_update = tf.contrib.metrics.streaming_mean_squared_error(
         outputs['masks_%d' % (k + 1)], inputs['masks_%d' % (k + 1)])
     name = 'mask_pred/rnn_%d' % (k + 1)

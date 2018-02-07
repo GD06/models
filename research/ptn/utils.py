@@ -15,11 +15,11 @@
 
 """Utility functions."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-import StringIO
+
+
+
+import io
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pylab as p
@@ -36,7 +36,7 @@ def save_image(inp_array, image_file):
   """Function that dumps the image to disk."""
   inp_array = np.clip(inp_array, 0, 255).astype(np.uint8)
   image = Image.fromarray(inp_array)
-  buf = StringIO.StringIO()
+  buf = io.StringIO()
   image.save(buf, format='JPEG')
   with open(image_file, 'w') as f:
     f.write(buf.getvalue())
@@ -47,7 +47,7 @@ def image_flipud(images):
   """Function that flip (up-down) the np image."""
   quantity = images.get_shape().as_list()[0]
   image_list = []
-  for k in xrange(quantity):
+  for k in range(quantity):
     image_list.append(tf.image.flip_up_down(images[k, :, :, :]))
   outputs = tf.stack(image_list)
   return outputs

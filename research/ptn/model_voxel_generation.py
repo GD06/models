@@ -14,9 +14,9 @@
 # ==============================================================================
 
 """Base class for voxel generation model."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import abc
 import os
@@ -30,10 +30,8 @@ import utils
 slim = tf.contrib.slim
 
 
-class Im2Vox(object):
+class Im2Vox(object, metaclass=abc.ABCMeta):
   """Defines the voxel generation model."""
-
-  __metaclass__ = abc.ABCMeta
 
   def __init__(self, params):
     self._params = params
@@ -99,20 +97,20 @@ class Im2Vox(object):
     inputs = dict()
     inputs['voxels'] = raw_inputs['voxels']
 
-    for k in xrange(step_size):
+    for k in range(step_size):
       inputs['images_%d' % (k + 1)] = []
       inputs['matrix_%d' % (k + 1)] = []
 
-    for n in xrange(quantity):
+    for n in range(quantity):
       selected_views = np.random.choice(num_views, step_size, replace=False)
-      for k in xrange(step_size):
+      for k in range(step_size):
         view_selected = selected_views[k]
         inputs['images_%d' %
                (k + 1)].append(raw_inputs['images'][n, view_selected, :, :, :])
         tf_matrix = self.get_transform_matrix(view_selected)
         inputs['matrix_%d' % (k + 1)].append(tf_matrix)
 
-    for k in xrange(step_size):
+    for k in range(step_size):
       inputs['images_%d' % (k + 1)] = tf.stack(inputs['images_%d' % (k + 1)])
       inputs['matrix_%d' % (k + 1)] = tf.stack(inputs['matrix_%d' % (k + 1)])
 
@@ -127,7 +125,7 @@ class Im2Vox(object):
     var_list = []
     for scope in scopes:
       var_list.extend(
-          filter(is_trainable, tf.contrib.framework.get_model_variables(scope)))
+          list(filter(is_trainable, tf.contrib.framework.get_model_variables(scope))))
 
     init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
         self._params.init_model, var_list)
@@ -146,7 +144,7 @@ class Im2Vox(object):
 
     for scope in scopes:
       var_list.extend(
-          filter(is_trainable, tf.contrib.framework.get_model_variables(scope)))
+          list(filter(is_trainable, tf.contrib.framework.get_model_variables(scope))))
       update_ops.extend(tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope))
 
     return slim.learning.create_train_op(
@@ -198,8 +196,8 @@ class Im2Vox(object):
 def _build_image_grid(input_images, gt_projs, pred_projs, pred_voxels):
   """Build the visualization grid with py_func."""
   quantity, img_height, img_width = input_images.shape[:3]
-  for row in xrange(int(quantity / 3)):
-    for col in xrange(3):
+  for row in range(int(quantity / 3)):
+    for col in range(3):
       index = row * 3 + col
       input_img_ = input_images[index, :, :, :]
       gt_proj_ = gt_projs[index, :, :, :]

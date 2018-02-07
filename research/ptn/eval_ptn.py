@@ -14,9 +14,9 @@
 # ==============================================================================
 
 """Contains evaluation plan for the Im2vox model."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import os
 
@@ -124,7 +124,7 @@ def main(argv=()):
         checkpoint_dir=eval_dir,
         logdir=log_dir,
         num_evals=num_batches,
-        eval_op=names_to_updates.values(),
+        eval_op=list(names_to_updates.values()),
         eval_interval_secs=FLAGS.eval_interval_secs)
 
 

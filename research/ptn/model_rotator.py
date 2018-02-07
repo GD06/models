@@ -14,9 +14,9 @@
 # ==============================================================================
 
 """Helper functions for pretraining (rotator) as described in PTN paper."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import os
 
@@ -80,11 +80,11 @@ def preprocess(raw_inputs, step_size):
 
   batch_rot = np.zeros((quantity, 3), dtype=np.float32)
   inputs = dict()
-  for n in xrange(step_size + 1):
+  for n in range(step_size + 1):
     inputs['images_%d' % n] = []
     inputs['masks_%d' % n] = []
 
-  for n in xrange(quantity):
+  for n in range(quantity):
     view_in = np.random.randint(0, num_views)
     rng_rot = np.random.randint(0, 2)
     if step_size == 1:
@@ -105,7 +105,7 @@ def preprocess(raw_inputs, step_size):
     inputs['masks_0'].append(raw_inputs['masks'][n, view_in, :, :, :])
 
     view_out = view_in
-    for k in xrange(1, step_size + 1):
+    for k in range(1, step_size + 1):
       view_out += delta
       if view_out >= num_views:
         view_out = 0
@@ -115,7 +115,7 @@ def preprocess(raw_inputs, step_size):
       inputs['images_%d' % k].append(raw_inputs['images'][n, view_out, :, :, :])
       inputs['masks_%d' % k].append(raw_inputs['masks'][n, view_out, :, :, :])
 
-  for n in xrange(step_size + 1):
+  for n in range(step_size + 1):
     inputs['images_%d' % n] = tf.stack(inputs['images_%d' % n])
     inputs['masks_%d' % n] = tf.stack(inputs['masks_%d' % n])
 
@@ -132,7 +132,7 @@ def get_init_fn(scopes, params):
   var_list = []
   for scope in scopes:
     var_list.extend(
-        filter(is_trainable, tf.contrib.framework.get_model_variables(scope)))
+        list(filter(is_trainable, tf.contrib.framework.get_model_variables(scope))))
 
   init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
       params.init_model, var_list)
@@ -178,7 +178,7 @@ def get_train_op_for_scope(loss, optimizer, scopes, params):
 
   for scope in scopes:
     var_list.extend(
-        filter(is_trainable, tf.contrib.framework.get_model_variables(scope)))
+        list(filter(is_trainable, tf.contrib.framework.get_model_variables(scope))))
     update_ops.extend(tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope))
 
   return slim.learning.create_train_op(
@@ -214,7 +214,7 @@ def get_metrics(inputs, outputs, params):
   names_to_values.update(tmp_values)
   names_to_updates.update(tmp_updates)
 
-  for name, value in names_to_values.iteritems():
+  for name, value in names_to_values.items():
     slim.summaries.add_scalar_summary(
         value, name, prefix='eval', print_summary=True)
  
@@ -244,8 +244,8 @@ def _build_image_grid(input_images, output_images, pred_images, pred_masks):
   """Builds a grid image by concatenating the input images."""
   quantity = input_images.get_shape().as_list()[0]
 
-  for row in xrange(int(quantity / 4)):
-    for col in xrange(4):
+  for row in range(int(quantity / 4)):
+    for col in range(4):
       index = row * 4 + col
       input_img_ = input_images[index, :, :, :]
       output_img_ = output_images[index, :, :, :]
