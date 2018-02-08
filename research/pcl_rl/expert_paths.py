@@ -40,7 +40,7 @@ def sample_expert_paths(num, env_str, env_spec,
       return [ep[1:] for ep in episodes]
 
   return [sample_expert_path(env_str, env_spec)
-          for _ in xrange(num)]
+          for _ in range(num)]
 
 
 def sample_expert_path(env_str, env_spec):
@@ -52,8 +52,8 @@ def sample_expert_path(env_str, env_spec):
 
   if env_str in ['DuplicatedInput-v0', 'Copy-v0']:
     chars = 5
-    random_ints = [int(random.random() * 1000) for _ in xrange(t)]
-    for tt in xrange(t):
+    random_ints = [int(random.random() * 1000) for _ in range(t)]
+    for tt in range(t):
       char_idx = tt // 2 if env_str == 'DuplicatedInput-v0' else tt
       char = random_ints[char_idx] % chars
       observations.append([char])
@@ -62,8 +62,8 @@ def sample_expert_path(env_str, env_spec):
   elif env_str in ['RepeatCopy-v0']:
     chars = 5
 
-    random_ints = [int(random.random() * 1000) for _ in xrange(t)]
-    for tt in xrange(3 * t + 2):
+    random_ints = [int(random.random() * 1000) for _ in range(t)]
+    for tt in range(3 * t + 2):
       char_idx = (tt if tt < t else
                   2 * t - tt if tt <= 2 * t else
                   tt - 2 * t - 2)
@@ -77,8 +77,8 @@ def sample_expert_path(env_str, env_spec):
       rewards.append(actions[-1][-2])
   elif env_str in ['Reverse-v0']:
     chars = 2
-    random_ints = [int(random.random() * 1000) for _ in xrange(t)]
-    for tt in xrange(2 * t + 1):
+    random_ints = [int(random.random() * 1000) for _ in range(t)]
+    for tt in range(2 * t + 1):
       char_idx = tt if tt < t else 2 * t - tt
       if tt != t:
         char = random_ints[char_idx] % chars
@@ -89,11 +89,11 @@ def sample_expert_path(env_str, env_spec):
       rewards.append(tt > t)
   elif env_str in ['ReversedAddition-v0']:
     chars = 3
-    random_ints = [int(random.random() * 1000) for _ in xrange(1 + 2 * t)]
+    random_ints = [int(random.random() * 1000) for _ in range(1 + 2 * t)]
     carry = 0
     char_history = []
     move_map = {0: 3, 1: 1, 2: 2, 3: 1}
-    for tt in xrange(2 * t + 1):
+    for tt in range(2 * t + 1):
       char_idx = tt
       if tt >= 2 * t:
         char = chars
@@ -114,11 +114,11 @@ def sample_expert_path(env_str, env_spec):
       rewards.append(tt % 2 or tt == 2 * t)
   elif env_str in ['ReversedAddition3-v0']:
     chars = 3
-    random_ints = [int(random.random() * 1000) for _ in xrange(1 + 3 * t)]
+    random_ints = [int(random.random() * 1000) for _ in range(1 + 3 * t)]
     carry = 0
     char_history = []
     move_map = {0: 3, 1: 3, 2: 1, 3: 2, 4:2, 5: 1}
-    for tt in xrange(3 * t + 1):
+    for tt in range(3 * t + 1):
       char_idx = tt
       if tt >= 3 * t:
         char = chars

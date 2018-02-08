@@ -36,11 +36,11 @@ class GymWrapper(object):
     self.count = count
     self.total = self.distinct * self.count
     self.seeds = seeds or [random.randint(0, 1e12)
-                           for _ in xrange(self.distinct)]
+                           for _ in range(self.distinct)]
 
     self.envs = []
     for seed in self.seeds:
-      for _ in xrange(self.count):
+      for _ in range(self.count):
         env = get_env(env_str)
         env.seed(seed)
         if hasattr(env, 'last'):
@@ -62,10 +62,10 @@ class GymWrapper(object):
     self.num_episodes_played += len(self.envs)
 
     # reset seeds to be synchronized
-    self.seeds = [random.randint(0, 1e12) for _ in xrange(self.distinct)]
+    self.seeds = [random.randint(0, 1e12) for _ in range(self.distinct)]
     counter = 0
     for seed in self.seeds:
-      for _ in xrange(self.count):
+      for _ in range(self.count):
         self.envs[counter].seed(seed)
         counter += 1
 
@@ -98,13 +98,13 @@ class GymWrapper(object):
       obs = self.env_spec.convert_obs_to_list(obs)
       return obs, reward, done, tt
 
-    actions = zip(*actions)
+    actions = list(zip(*actions))
     outputs = [env_step(env, action)
                if not done else (self.env_spec.initial_obs(None), 0, True, None)
                for action, env, done in zip(actions, self.envs, self.dones)]
     for i, (_, _, done, _) in enumerate(outputs):
       self.dones[i] = self.dones[i] or done
-    obs, reward, done, tt = zip(*outputs)
+    obs, reward, done, tt = list(zip(*outputs))
     obs = [list(oo) for oo in zip(*obs)]
     return [obs, reward, done, tt]
 

@@ -19,6 +19,7 @@
 
 
 import os
+from cg_profiler.cg_graph import CompGraph
 
 import tensorflow as tf
 from tensorflow import app
@@ -76,13 +77,13 @@ FLAGS = flags.FLAGS
 
 def main(argv=()):
   del argv  # Unused.
-  eval_dir = os.path.join(FLAGS.checkpoint_dir, FLAGS.model_name, 'train')
-  log_dir = os.path.join(FLAGS.checkpoint_dir, FLAGS.model_name,
-                         'eval_%s' % FLAGS.eval_set)
-  if not os.path.exists(eval_dir):
-    os.makedirs(eval_dir)
-  if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
+  #eval_dir = os.path.join(FLAGS.checkpoint_dir, FLAGS.model_name, 'train')
+  #log_dir = os.path.join(FLAGS.checkpoint_dir, FLAGS.model_name,
+  #                       'eval_%s' % FLAGS.eval_set)
+  #if not os.path.exists(eval_dir):
+  #  os.makedirs(eval_dir)
+  #if not os.path.exists(log_dir):
+  #  os.makedirs(log_dir)
   g = tf.Graph()
 
   with g.as_default():
@@ -119,13 +120,55 @@ def main(argv=()):
     ## evaluation ##
     ################
     num_batches = eval_data['num_samples']
-    slim.evaluation.evaluation_loop(
-        master=FLAGS.master,
-        checkpoint_dir=eval_dir,
-        logdir=log_dir,
-        num_evals=num_batches,
-        eval_op=list(names_to_updates.values()),
-        eval_interval_secs=FLAGS.eval_interval_secs)
+
+    sess = tf.Session()
+    tf.train.start_queue_runners(sess=sess)
+    saver = tf.train.Saver()
+
+    def restore_from_checkpoint(sess, saver):
+      ckpt = tf.train.get_checkpoint_state(FLAGS.checkpoint_dir)
+      if not ckpt or not ckpt.model_checkpoint_path:
+        return False
+
+      saver.restore(sess, ckpt.model_checkpoint_path)
+      return True
+
+    if not restore_from_checkpoint(sess, saver):
+      raise NotImplementedError
+
+    init = tf.global_variables_initializer()
+    sess.run(init)
+    init = tf.local_variables_initializer()
+    sess.run(init)
+
+    for i in range(num_batches):
+      print('Running {} batch out of {} batches.'.format(i, num_batches))
+
+      options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+      run_metadata = tf.RunMetadata()
+
+      sess.run(list(names_to_updates.values()), options=options,
+               run_metadata=run_metadata)
+      cg = CompGraph('ptn', run_metadata, tf.get_default_graph())
+
+      cg_tensor_dict = cg.get_tensors()
+      cg_sorted_keys = sorted(cg_tensor_dict.keys())
+      cg_sorted_items = []
+      for cg_key in cg_sorted_keys:
+        cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+      cg_sorted_shape = sess.run(cg_sorted_items)
+      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                     'ptn.pickle')
+
+      exit(0)
+    #slim.evaluation.evaluation_loop(
+    #    master=FLAGS.master,
+    #    checkpoint_dir=eval_dir,
+    #    logdir=log_dir,
+    #    num_evals=num_batches,
+    #    eval_op=list(names_to_updates.values()),
+    #    eval_interval_secs=FLAGS.eval_interval_secs)
 
 
 if __name__ == '__main__':

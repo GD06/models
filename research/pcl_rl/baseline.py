@@ -145,7 +145,7 @@ class Baseline(object):
         time_step, reshaped_obs, reshaped_prev_act,
         reshaped_internal_policy_states)
 
-    for depth in xrange(self.n_hidden_layers):
+    for depth in range(self.n_hidden_layers):
       with tf.variable_scope('value_layer%d' % depth):
         w = tf.get_variable('w', [input_dim, self.hidden_dim])
         inputs = tf.nn.tanh(tf.matmul(inputs, w))

@@ -37,6 +37,7 @@ import replay_buffer
 import expert_paths
 import gym_wrapper
 import env_spec
+import collections
 
 app = tf.app
 flags = tf.flags
@@ -129,6 +130,9 @@ flags.DEFINE_string('save_trajectories_dir', None,
                     'directory to save trajectories to, if desired')
 flags.DEFINE_string('load_trajectories_file', None,
                     'file to load expert trajectories from')
+
+flags.DEFINE_string('model_name', 'pcl_rl',
+                    'model name of this RL model')
 
 # supervisor flags
 flags.DEFINE_bool('supervisor', False, 'use supervisor training')
@@ -226,7 +230,7 @@ class Trainer(object):
     self.hparams = dict((attr, getattr(self, attr))
                         for attr in dir(self)
                         if not attr.startswith('__') and
-                        not callable(getattr(self, attr)))
+                        not isinstance(getattr(self, attr), collections.Callable))
 
   def hparams_string(self):
     return '\n'.join('%s: %s' % item for item in sorted(self.hparams.items()))
@@ -419,7 +423,7 @@ class Trainer(object):
     losses = []
     rewards = []
     all_ep_rewards = []
-    for step in xrange(1 + self.num_steps):
+    for step in range(1 + self.num_steps):
 
       if sv is not None and sv.ShouldStop():
         logging.info('stopping supervisor')

@@ -15,9 +15,9 @@
 
 """Utilities for environment interface with agent / tensorflow."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import numpy as np
 
@@ -36,7 +36,7 @@ def get_space(space):
 
 def get_spaces(spaces):
   if hasattr(spaces, 'spaces'):
-    return zip(*[get_space(space) for space in spaces.spaces])
+    return list(zip(*[get_space(space) for space in spaces.spaces]))
   else:
     return [(ret,) for ret in get_space(spaces)]
 
@@ -65,7 +65,7 @@ class EnvSpec(object):
           self.act_dims.append(dim)
           self.act_types.append(spaces.discrete)
         elif typ == spaces.box:
-          for _ in xrange(dim):
+          for _ in range(dim):
             self.act_dims.append(self.discretize_actions)
             self.act_types.append(spaces.discrete)
     else:
@@ -85,8 +85,8 @@ class EnvSpec(object):
     else:
       self.combine_actions = False
 
-    self.obs_dims_and_types = zip(self.obs_dims, self.obs_types)
-    self.act_dims_and_types = zip(self.act_dims, self.act_types)
+    self.obs_dims_and_types = list(zip(self.obs_dims, self.obs_types))
+    self.act_dims_and_types = list(zip(self.act_dims, self.act_types))
 
     self.total_obs_dim = sum(self.obs_dims)
     self.total_sampling_act_dim = sum(self.sampling_dim(dim, typ)
@@ -120,7 +120,7 @@ class EnvSpec(object):
         elif typ == spaces.box:
           low, high = self.act_info[i]
           cur_action = []
-          for j in xrange(dim):
+          for j in range(dim):
             cur_action.append(
                 low[j] + (high[j] - low[j]) * actions[idx] /
                 float(self.discretize_actions))
@@ -174,7 +174,7 @@ class EnvSpec(object):
     if batched:
       return obs
     else:
-      return zip(*obs)[0]
+      return next(zip(*obs))
 
   def initial_act(self, batch_size=None):
     batched = batch_size is not None
@@ -190,7 +190,7 @@ class EnvSpec(object):
     if batched:
       return act
     else:
-      return zip(*act)[0]
+      return next(zip(*act))
 
   def is_discrete(self, typ):
     return typ == spaces.discrete

@@ -21,9 +21,9 @@ Best Fit optimizer
 
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import tensorflow as tf
 import numpy as np
@@ -136,7 +136,7 @@ class GradOptimization(object):
     opt = self.get_optimizer()
     params = var_list
     grads = tf.gradients(self.raw_loss, params)
-    self.gradient_ops = opt.apply_gradients(zip(grads, params))
+    self.gradient_ops = opt.apply_gradients(list(zip(grads, params)))
 
   def optimize(self, sess, feed_dict):
     old_values, targets = sess.run([self.values, self.targets], feed_dict=feed_dict)
@@ -145,7 +145,7 @@ class GradOptimization(object):
     feed_dict = dict(feed_dict)
     feed_dict[self.intended_values] = intended_values
 
-    for _ in xrange(self.max_iter):
+    for _ in range(self.max_iter):
       sess.run(self.gradient_ops, feed_dict=feed_dict)
 
 

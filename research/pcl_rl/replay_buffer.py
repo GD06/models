@@ -56,13 +56,13 @@ class ReplayBuffer(object):
   def remove_n(self, n):
     """Get n items for removal."""
     # random removal
-    idxs = random.sample(xrange(self.init_length, self.cur_size), n)
+    idxs = random.sample(range(self.init_length, self.cur_size), n)
     return idxs
 
   def get_batch(self, n):
     """Get batch of episodes to train on."""
     # random batch
-    idxs = random.sample(xrange(self.cur_size), n)
+    idxs = random.sample(range(self.cur_size), n)
     return [self.buffer[idx] for idx in idxs], None
 
   def update_last_batch(self, delta):
@@ -122,13 +122,13 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
     if self.eviction_strategy == 'rand':
       # random removal
-      idxs = random.sample(xrange(self.init_length, self.cur_size), n)
+      idxs = random.sample(range(self.init_length, self.cur_size), n)
     elif self.eviction_strategy == 'fifo':
       # overwrite elements in cyclical fashion
       idxs = [
           self.init_length +
           (self.remove_idx + i) % (self.max_size - self.init_length)
-          for i in xrange(n)]
+          for i in range(n)]
       self.remove_idx = idxs[-1] + 1 - self.init_length
     elif self.eviction_strategy == 'rank':
       # remove lowest-priority indices

@@ -16,9 +16,9 @@
 """Controller coordinates sampling and training model.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import tensorflow as tf
 import numpy as np
@@ -51,7 +51,7 @@ def find_best_eps_lambda(rewards, lengths):
     return (left + right) / 2
 
   num_iter = max(4, 1 + int(np.log((right - left) / 0.1) / np.log(2.0)))
-  for _ in xrange(num_iter):
+  for _ in range(num_iter):
     mid = (left + right) / 2
     cur_div = calc_divergence(mid)
     if cur_div > desired_div:
@@ -130,9 +130,9 @@ class Controller(object):
       if obs is not None:
         self.step_count[i] = 0
         self.internal_state[i] = self.initial_internal_state()
-        for j in xrange(len(self.env_spec.obs_dims)):
+        for j in range(len(self.env_spec.obs_dims)):
           self.last_obs[j][i] = obs[j]
-        for j in xrange(len(self.env_spec.act_dims)):
+        for j in range(len(self.env_spec.act_dims)):
           self.last_act[j][i] = -1
         self.last_pad[i] = 0
 
@@ -203,8 +203,8 @@ class Controller(object):
        observations, actions, rewards,
        pads) = self._sample_episodes(sess, greedy=greedy)
 
-      observations = zip(*observations)
-      actions = zip(*actions)
+      observations = list(zip(*observations))
+      actions = list(zip(*actions))
 
       terminated = np.array(self.env.dones)
 
@@ -286,7 +286,7 @@ class Controller(object):
 
     # on the first iteration, set target network close to online network
     if self.cur_step == 0:
-      for _ in xrange(100):
+      for _ in range(100):
         sess.run(self.model.copy_op)
     # on other iterations, just perform single target <-- online operation
     sess.run(self.model.copy_op)
@@ -357,7 +357,7 @@ class Controller(object):
 
     episodes = []
     num_episodes = rewards.shape[1]
-    for i in xrange(num_episodes):
+    for i in range(num_episodes):
       length = total_length[i]
       ep_initial = initial_state[i]
       ep_obs = [obs[:length + 1, i, ...] for obs in observations]
@@ -387,7 +387,7 @@ class Controller(object):
                            terminated, pads])
 
     (initial, observations, actions, rewards,
-     terminated, pads) = zip(*new_episodes)
+     terminated, pads) = list(zip(*new_episodes))
     observations = [np.swapaxes(obs, 0, 1)
                     for obs in zip(*observations)]
     actions = [np.swapaxes(act, 0, 1)
@@ -454,7 +454,7 @@ class Controller(object):
       return
 
     # just need to add initial state
-    for i in xrange(len(episodes)):
+    for i in range(len(episodes)):
       episodes[i] = [self.initial_internal_state()] + episodes[i]
 
     self.replay_buffer.seed_buffer(episodes)

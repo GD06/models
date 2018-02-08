@@ -114,7 +114,8 @@ class Operator:
                         'SparseToDense', 'Div', 'LogicalAnd', 'Tile', 'Relu6',
                         'DepthwiseConv2dNative', 'CropAndResize', 'FloorMod',
                         'SpaceToBatchND', 'BatchToSpaceND', 'ReverseSequence',
-                        'All'}
+                        'All', 'Multinomial', 'SparseTensorDenseAdd',
+                        'Conv3DBackpropInputV2'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
                           'SparseSoftmaxCrossEntropyWithLogits'}
@@ -186,7 +187,7 @@ class Operator:
                                 'Abs', 'Slice', 'Concat', 'SparseToDense', 'Div',
                                 'LogicalAnd', 'Tile', 'CropAndResize', 'FloorMod',
                                 'SpaceToBatchND', 'BatchToSpaceND', 'DynamicStitch',
-                                'ReverseSequence'})
+                                'ReverseSequence', 'Multinomial', 'SparseTensorDenseAdd'})
 
         # 2-type elementwise operator
         elementwise_op_set.append({'Relu6'})
@@ -216,6 +217,9 @@ class Operator:
         if (self.op_type == 'Conv2D'
                 or self.op_type == 'Conv2DBackpropInput'):
             return self._cal_comp_conv2d(tf_opr)
+
+        if self.op_type == 'Conv3DBackpropInputV2':
+            return self._cal_comp_conv3d(tf_opr)
 
         if self.op_type == 'FusedBatchNorm':
             return self._cal_comp_fusedbatchnorm(tf_opr)
@@ -264,7 +268,8 @@ class Operator:
                               'ScatterUpdate', 'Concat', 'SparseToDense', 'Div',
                               'LogicalAnd', 'Tile', 'Relu6', 'CropAndResize',
                               'FloorMod', 'SpaceToBatchND', 'BatchToSpaceND',
-                              'DynamicStitch', 'ReverseSequence'}
+                              'DynamicStitch', 'ReverseSequence', 'Multinomial',
+                              'SparseTensorDenseAdd'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean', 'All'}
 
@@ -285,6 +290,9 @@ class Operator:
         if (self.op_type == 'Conv2D'
                 or self.op_type == 'Conv2DBackpropInput'):
             return self._cal_par_conv2d(tf_opr)
+
+        if self.op_type == 'Conv3DBackpropInputV2':
+            return self._cal_par_conv3d(tf_opr)
 
         if self.op_type == 'AddN':
             return self._cal_par_addn(tf_opr)
@@ -349,6 +357,37 @@ class Operator:
         comp_ops = 2 * batch_size * k * np.prod(np.array(c_shape))
         return comp_ops
 
+    def _extract_conv3d_params(self, tf_opr):
+        conv_args = {}
+        if (tf_opr.get_attr('data_format') == b'NDHWC'
+                or tf_opr.get_attr('data_format') == 'NDHWC'):
+            conv_args['ON'] = self.output_tensor_shape[0][0]
+            conv_args['OD'] = self.output_tensor_shape[0][1]
+            conv_args['OH'] = self.output_tensor_shape[0][2]
+            conv_args['OW'] = self.output_tensor_shape[0][3]
+            conv_args['OC'] = self.output_tensor_shape[0][4]
+        else:
+            conv_args['ON'] = self.output_tensor_shape[0][0]
+            conv_args['OC'] = self.output_tensor_shape[0][1]
+            conv_args['OD'] = self.output_tensor_shape[0][2]
+            conv_args['OH'] = self.output_tensor_shape[0][3]
+            conv_args['OW'] = self.output_tensor_shape[0][4]
+
+        conv_args['FD'] = self.input_tensor_shape[1][0]
+        conv_args['FH'] = self.input_tensor_shape[1][1]
+        conv_args['FW'] = self.input_tensor_shape[1][2]
+
+        if conv_args['OC'] == self.input_tensor_shape[1][3]:
+            conv_args['IC'] = self.input_tensor_shape[1][2]
+        elif conv_args['OC'] == self.input_tensor_shape[1][2]:
+            conv_args['IC'] = self.input_tensor_shape[1][3]
+        else:
+            raise NotImplementedError
+
+        conv_args['IN'] = conv_args['ON']
+
+        return conv_args
+
     def _extract_conv2d_params(self, tf_opr):
         conv_args = {}
         #assert len(self.input_tensor_shape) == 2
@@ -390,6 +429,15 @@ class Operator:
         conv_args = self._extract_conv2d_params(tf_opr)
         comp_ops = 2 * comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
         comp_ops = comp_ops * conv_args['IC'] * conv_args['FH'] * conv_args['FW']
+
+        return comp_ops
+
+    def _cal_comp_conv3d(self, tf_opr):
+        comp_ops = 1
+
+        conv_args = self._extract_conv3d_params(tf_opr)
+        comp_ops = 2 * comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
+        comp_ops = comp_ops * conv_args['IC'] * conv_args['FH'] * conv_args['FW'] * conv_args['FD']
 
         return comp_ops
 
@@ -451,6 +499,14 @@ class Operator:
     def _cal_par_conv2d(self, tf_opr):
         conv_args = self._extract_conv2d_params(tf_opr)
         K = conv_args['IC'] * conv_args['FH'] * conv_args['FW']
+
+        K = max(K, 2.0)
+        par_ratio = 0.5 + (1.0 / (2 * math.ceil(math.log2(K))))
+        return par_ratio
+
+    def _cal_par_conv3d(self, tf_opr):
+        conv_args = self._extract_conv3d_params(tf_opr)
+        K = conv_args['IC'] * conv_args['FH'] * conv_args['FW'] * conv_args['FD']
 
         K = max(K, 2.0)
         par_ratio = 0.5 + (1.0 / (2 * math.ceil(math.log2(K))))
