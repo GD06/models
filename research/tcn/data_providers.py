@@ -50,6 +50,8 @@ def full_sequence_provider(file_list, num_views):
     task = context['task']
     return views, task, seq_len
 
+  print('File list:', file_list)
+  print('Num views:', num_views)
   data_files = tf.contrib.slim.parallel_reader.get_data_files(file_list)
   dataset = tf.data.Dataset.from_tensor_slices(data_files)
   dataset = dataset.repeat(1)
@@ -165,8 +167,8 @@ def parse_sequence_example(serialized_example, num_views):
   views = tf.stack([sequence_parse[v] for v in view_names])
   lens = [sequence_parse[v].get_shape().as_list()[0] for v in view_names]
   assert len(set(lens)) == 1
-  seq_len = tf.shape(sequence_parse[v])[0]
-  return context_parse, views, seq_len
+  seq_len_l = [tf.shape(sequence_parse[v]) for v in view_names]
+  return context_parse, views, seq_len_l[0][0]
 
 
 def get_shuffled_input_records(file_list):

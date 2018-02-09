@@ -22,7 +22,7 @@ import time
 from estimators.get_estimator import get_estimator
 from utils import util
 import tensorflow as tf
-tf.logging.set_verbosity(tf.logging.INFO)
+#tf.logging.set_verbosity(tf.logging.INFO)
 
 tf.flags.DEFINE_string(
     'config_paths', '',
@@ -38,6 +38,16 @@ tf.app.flags.DEFINE_string('master', 'local',
                            'BNS name of the TensorFlow master to use')
 tf.app.flags.DEFINE_string(
     'logdir', '/tmp/tcn', 'Directory where to write event logs.')
+
+tf.app.flags.DEFINE_string(
+    'tfrecords', '', 'The path of tfrecords for evaluation.')
+
+tf.app.flags.DEFINE_string(
+    'model_name', 'tcn_inception_v3', 'the model name of the model to be evaluated.')
+
+tf.app.flags.DEFINE_integer(
+    'batch_size',  1, 'batch size of data to be evaluted')
+
 FLAGS = tf.app.flags.FLAGS
 
 
@@ -55,9 +65,15 @@ def main(_):
     tf.logging.info('Waiting for a checkpoint file...')
     time.sleep(10)
 
+  ckpt = tf.train.get_checkpoint_state(logdir)
+  for val1, val2, val3 in estimator.inference(
+          FLAGS.tfrecords, ckpt.model_checkpoint_path, FLAGS.batch_size,
+          model_name=FLAGS.model_name):
+    break
   # Run validation.
-  while True:
-    estimator.evaluate()
+
+  #while True:
+  #  estimator.evaluate()
 
 if __name__ == '__main__':
   tf.app.run()

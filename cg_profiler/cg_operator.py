@@ -115,7 +115,7 @@ class Operator:
                         'DepthwiseConv2dNative', 'CropAndResize', 'FloorMod',
                         'SpaceToBatchND', 'BatchToSpaceND', 'ReverseSequence',
                         'All', 'Multinomial', 'SparseTensorDenseAdd',
-                        'Conv3DBackpropInputV2'}
+                        'Conv3DBackpropInputV2', 'FloorDiv'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
                           'SparseSoftmaxCrossEntropyWithLogits'}
@@ -187,7 +187,8 @@ class Operator:
                                 'Abs', 'Slice', 'Concat', 'SparseToDense', 'Div',
                                 'LogicalAnd', 'Tile', 'CropAndResize', 'FloorMod',
                                 'SpaceToBatchND', 'BatchToSpaceND', 'DynamicStitch',
-                                'ReverseSequence', 'Multinomial', 'SparseTensorDenseAdd'})
+                                'ReverseSequence', 'Multinomial', 'SparseTensorDenseAdd',
+                                'FloorDiv'})
 
         # 2-type elementwise operator
         elementwise_op_set.append({'Relu6'})
@@ -269,7 +270,7 @@ class Operator:
                               'LogicalAnd', 'Tile', 'Relu6', 'CropAndResize',
                               'FloorMod', 'SpaceToBatchND', 'BatchToSpaceND',
                               'DynamicStitch', 'ReverseSequence', 'Multinomial',
-                              'SparseTensorDenseAdd'}
+                              'SparseTensorDenseAdd', 'FloorDiv'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean', 'All'}
 

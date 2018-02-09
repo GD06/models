@@ -55,7 +55,7 @@ class T(object):
   def __repr__(self):
     fmt = ', '.join('%s=%s' for i in range(len(self.__dict__)))
     kwargstr = fmt % tuple(
-        x for tup in self.__dict__.items() for x in [str(tup[0]), repr(tup[1])])
+        x for tup in list(self.__dict__.items()) for x in [str(tup[0]), repr(tup[1])])
     return 'T(' + kwargstr + ')'
 
   def __getitem__(self, key):
@@ -74,7 +74,7 @@ class T(object):
     return len(self.__dict__)
 
   def keys(self):  # Needed for dict(T( ... )) to work.
-    return self.__dict__.keys()
+    return list(self.__dict__.keys())
 
   def iteritems(self):
-    return self.__dict__.iteritems()
+    return iter(self.__dict__.items())

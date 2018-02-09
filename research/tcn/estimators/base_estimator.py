@@ -35,6 +35,8 @@ from tensorflow.contrib.tpu.python.tpu import tpu_optimizer
 from tensorflow.python.training import session_run_hook
 import collections
 
+from cg_profiler.cg_graph import CompGraph
+
 tf.app.flags.DEFINE_integer(
     'tf_random_seed', 0, 'Random seed.')
 FLAGS = tf.app.flags.FLAGS
@@ -504,15 +506,18 @@ class BaseEstimator(object, metaclass=ABCMeta):
     """
     # Mode 1: input is a callable tf.Estimator input_fn.
     if isinstance(inference_input, collections.Callable):
+      print('Mode 1')
       return self._input_fn_inference(
           input_fn=inference_input, checkpoint_path=checkpoint_path, **kwargs)
     # Mode 2: Input is a TFRecord path (or list of TFRecord paths).
     elif util.is_tfrecord_input(inference_input):
+      print('Mode 2')
       return self._tfrecord_inference(
           records=inference_input, checkpoint_path=checkpoint_path,
           batch_size=batch_size, **kwargs)
     # Mode 3: Input is a numpy array of raw images.
     elif util.is_np_array(inference_input):
+      print('Mode 3')
       return self._np_inference(
           np_images=inference_input, checkpoint_path=checkpoint_path, **kwargs)
     else:
@@ -545,7 +550,7 @@ class BaseEstimator(object, metaclass=ABCMeta):
     return predictions
 
   def _tfrecord_inference(self, records, checkpoint_path, batch_size,
-                          num_sequences=-1, reuse=False):
+                          num_sequences=-1, reuse=False, model_name="tcn"):
     """Mode 2: TFRecord inference.
 
     Args:
@@ -563,9 +568,12 @@ class BaseEstimator(object, metaclass=ABCMeta):
         [sequence_size] jpeg-encoded image strings.
         sequence_name is a string holding the name of the embedded sequence.
     """
+    print('model name: {}'.format(model_name))
+    print('tfrecords path: {}'.format(records))
     tf.reset_default_graph()
     if not isinstance(records, list):
-      records = list(records)
+      records = [records]
+    print('tfrecords list: {}'.format(records))
 
     # Map the list of tfrecords to a dataset of preprocessed images.
     num_views = self._config.data.num_views
@@ -591,7 +599,8 @@ class BaseEstimator(object, metaclass=ABCMeta):
     saver = tf.train.Saver(tf.all_variables())
 
     # Create a session and restore model variables.
-    with tf.train.MonitoredSession() as sess:
+    with tf.Session() as sess:
+    #with tf.train.MonitoredSession() as sess:
       saver.restore(sess, checkpoint_path)
       cnt = 0
       # If num_sequences is specified, embed that many sequences, else embed
@@ -614,9 +623,28 @@ class BaseEstimator(object, metaclass=ABCMeta):
             t = 0
             while t < np_seq_len:
               # Decode and preprocess the batch of image strings.
+
+              options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+              run_metadata = tf.RunMetadata()
+
               embeddings_np = sess.run(
                   embeddings, feed_dict={
-                      image_str_placeholder: view_raw[t:t+batch_size]})
+                      image_str_placeholder: view_raw[t:t+batch_size]},
+                  options=options, run_metadata=run_metadata)
+              cg = CompGraph(model_name, run_metadata, sess.graph)
+
+              cg_tensor_dict = cg.get_tensors()
+              cg_sorted_keys = sorted(cg_tensor_dict.keys())
+              cg_sorted_items = []
+              for cg_key in cg_sorted_keys:
+                cg_sorted_items.append(cg_tensor_dict[cg_key].shape)
+
+              #cg_sorted_shape = sess.run(cg_sorted_items,
+              #      feed_dict={image_str_placeholder: view_raw[t:t+batch_size]})
+              cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_items)),
+                             '{}.pickle'.format(model_name))
+              exit(0)
+
               view_embeddings[view_index] = np.append(
                   view_embeddings[view_index], embeddings_np, axis=0)
               tf.logging.info('Embedded %d images for task %s' % (t, np_task))
