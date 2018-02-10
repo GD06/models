@@ -57,9 +57,9 @@ The nested dictionary is the DATA DICTIONARY, which has the following keys:
   underlying firing rates, there is the 'conversion_factor' key.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 
 import numpy as np
@@ -75,6 +75,7 @@ from utils import init_linear, linear, list_t_bxn_to_tensor_bxtxn, write_data
 from utils import log_sum_exp, flatten
 from plot_lfads import plot_lfads
 
+from cg_profiler.cg_graph import CompGraph
 
 class GRU(object):
   """Gated Recurrent Unit cell (cf. http://arxiv.org/abs/1406.1078).
@@ -277,7 +278,7 @@ class LFADS(object):
   event counts).
   """
 
-  def __init__(self, hps, kind="train", datasets=None):
+  def __init__(self, hps, kind="train", datasets=None, model_name="lfads"):
     """Create an LFADS model.
 
        train - a model for training, sampling of posteriors is used
@@ -295,6 +296,8 @@ class LFADS(object):
       datasets: a dictionary of named data_dictionaries, see top of lfads.py
     """
     print("Building graph...")
+    self.model_name = model_name
+    print("Model name: {}".format(model_name))
     all_kinds = ['train', 'posterior_sample_and_average', 'prior_sample']
     assert kind in all_kinds, 'Wrong kind'
     if hps.feedback_factors_or_rates == "rates":
@@ -347,7 +350,7 @@ class LFADS(object):
     self.ext_inputs = ext_inputs = None
 
     if len(dataset_names) == 1:  # single session
-      if 'alignment_matrix_cxf' in datasets[dataset_names[0]].keys():
+      if 'alignment_matrix_cxf' in list(datasets[dataset_names[0]].keys()):
         used_in_factors_dim = factors_dim
         in_identity_if_poss = False
       else:
@@ -363,7 +366,7 @@ class LFADS(object):
       in_bias_1xf = None
       align_bias_1xc = None
 
-      if datasets and 'alignment_matrix_cxf' in datasets[name].keys():
+      if datasets and 'alignment_matrix_cxf' in list(datasets[name].keys()):
         dataset = datasets[name]
         print("Using alignment matrix provided for dataset:", name)
         in_mat_cxf = dataset['alignment_matrix_cxf'].astype(np.float32)
@@ -372,7 +375,7 @@ class LFADS(object):
           (data_dim x factors_dim), but currently has %d x %d."""%
                            (data_dim, factors_dim, in_mat_cxf.shape[0],
                             in_mat_cxf.shape[1]))
-      if datasets and 'alignment_bias_c' in datasets[name].keys():
+      if datasets and 'alignment_bias_c' in list(datasets[name].keys()):
         dataset = datasets[name]
         print("Using alignment bias provided for dataset:", name)
         align_bias_c = dataset['alignment_bias_c'].astype(np.float32)
@@ -405,11 +408,11 @@ class LFADS(object):
       for d, name in enumerate(dataset_names):
         data_dim = hps.dataset_dims[name]
         in_mat_cxf = None
-        if datasets and 'alignment_matrix_cxf' in datasets[name].keys():
+        if datasets and 'alignment_matrix_cxf' in list(datasets[name].keys()):
           dataset = datasets[name]
           in_mat_cxf = dataset['alignment_matrix_cxf'].astype(np.float32)
 
-        if datasets and 'alignment_bias_c' in datasets[name].keys():
+        if datasets and 'alignment_bias_c' in list(datasets[name].keys()):
           dataset = datasets[name]
           align_bias_c = dataset['alignment_bias_c'].astype(np.float32)
           align_bias_1xc = np.expand_dims(align_bias_c, axis=0)
@@ -464,10 +467,10 @@ class LFADS(object):
         fns_out_fac_Ws[d] = makelambda(out_fac_W)
         fns_out_fac_bs[d] =  makelambda(out_fac_b)
 
-    pf_pairs_in_fac_Ws = zip(preds, fns_in_fac_Ws)
-    pf_pairs_in_fac_bs = zip(preds, fns_in_fac_bs)
-    pf_pairs_out_fac_Ws = zip(preds, fns_out_fac_Ws)
-    pf_pairs_out_fac_bs = zip(preds, fns_out_fac_bs)
+    pf_pairs_in_fac_Ws = list(zip(preds, fns_in_fac_Ws))
+    pf_pairs_in_fac_bs = list(zip(preds, fns_in_fac_bs))
+    pf_pairs_out_fac_Ws = list(zip(preds, fns_out_fac_Ws))
+    pf_pairs_out_fac_bs = list(zip(preds, fns_out_fac_bs))
 
     def _case_with_no_default(pairs):
       def _default_value_fn():
@@ -518,10 +521,10 @@ class LFADS(object):
       """
       if forward_or_reverse == "forward":
         dstr = "_fwd"
-        time_fwd_or_rev = range(num_steps_to_encode)
+        time_fwd_or_rev = list(range(num_steps_to_encode))
       else:
         dstr = "_rev"
-        time_fwd_or_rev = reversed(range(num_steps_to_encode))
+        time_fwd_or_rev = reversed(list(range(num_steps_to_encode)))
 
       with tf.variable_scope(name+"_enc"+dstr, reuse=False):
         enc_state = tf.tile(
@@ -919,7 +922,7 @@ class LFADS(object):
     self.grads = grads
     self.grad_global_norm = grad_global_norm
     self.train_op = opt.apply_gradients(
-        zip(grads, tvars), global_step=self.train_step)
+        list(zip(grads, tvars)), global_step=self.train_step)
 
     self.seso_saver = tf.train.Saver(tf.global_variables(),
                                      max_to_keep=hps.max_ckpt_to_keep)
@@ -1082,7 +1085,7 @@ class LFADS(object):
       #bmrem_examples = np.zeros(bmrem, dtype=np.int32)
       ridxs = np.random.permutation(nexamples)[0:bmrem].astype(np.int32)
       bmrem_examples = np.sort(ridxs)
-    example_idxs = range(nexamples) + list(bmrem_examples)
+    example_idxs = list(range(nexamples)) + list(bmrem_examples)
     example_idxs_e_x_edivb = np.reshape(example_idxs, [-1, batch_size])
     return example_idxs_e_x_edivb, bmrem
 
@@ -1103,9 +1106,9 @@ class LFADS(object):
     bmrem = batch_size - nexamples % batch_size
     bmrem_examples = []
     if bmrem < batch_size:
-      bmrem_examples = np.random.choice(range(nexamples),
+      bmrem_examples = np.random.choice(list(range(nexamples)),
                                         size=bmrem, replace=False)
-    example_idxs = range(nexamples) + list(bmrem_examples)
+    example_idxs = list(range(nexamples)) + list(bmrem_examples)
     mixed_example_idxs = np.random.permutation(example_idxs)
     example_idxs_e_x_edivb = np.reshape(mixed_example_idxs, [-1, batch_size])
     return example_idxs_e_x_edivb, bmrem
@@ -1181,7 +1184,7 @@ class LFADS(object):
     epoch_idxs = {}
     all_name_example_idx_pairs = []
     kind_data = kind + '_data'
-    for name, data_dict in datasets.items():
+    for name, data_dict in list(datasets.items()):
       nexamples, ntime, data_dim = data_dict[kind_data].shape
       epoch_idxs[name] = 0
       random_example_idxs, _ = \
@@ -1189,7 +1192,7 @@ class LFADS(object):
 
       epoch_size = random_example_idxs.shape[0]
       names = [name] * epoch_size
-      all_name_example_idx_pairs += zip(names, random_example_idxs)
+      all_name_example_idx_pairs += list(zip(names, random_example_idxs))
 
     np.random.shuffle(all_name_example_idx_pairs) # shuffle in place
 
@@ -1262,6 +1265,7 @@ class LFADS(object):
       A list of lists, the internal list is the return for the ops for each
       session.run() call.  The outer list collects over the epoch.
     """
+    print('calling run_epoch')
     hps = self.hps
     all_name_example_idx_pairs = \
         self.shuffle_and_flatten_datasets(datasets, kind)
@@ -1285,7 +1289,33 @@ class LFADS(object):
 
       feed_dict = self.build_feed_dict(name, data_bxtxd, ext_input_bxtxi,
                                        keep_prob=keep_prob)
-      evaled_ops_np = session.run(ops_to_eval, feed_dict=feed_dict)
+
+      options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+      run_metadata = tf.RunMetadata()
+      evaled_ops_np = session.run(ops_to_eval, feed_dict=feed_dict,
+                                  options=options, run_metadata=run_metadata)
+      cg = CompGraph(self.model_name, run_metadata, session.graph)
+
+      cg_tensor_dict = cg.get_tensors()
+      cg_sorted_keys = sorted(cg_tensor_dict.keys())
+      cg_sorted_items = []
+      for cg_key in cg_sorted_keys:
+        cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+      print('Num of tensor shapes:', len(cg_sorted_items))
+      cg_sorted_shape = []
+      for i in range(0, len(cg_sorted_items), 1000):
+          print('Running {}/{}'.format(i, len(cg_sorted_items)))
+          partial_shape = session.run(cg_sorted_items[i:i+1000],
+                                   feed_dict=feed_dict)
+          cg_sorted_shape.extend(partial_shape)
+      #cg_sorted_shape = session.run(cg_sorted_items,
+      #                              feed_dict=feed_dict)
+      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                     '{}.pickle'.format(self.model_name))
+
+      exit(0)
+
       if do_collect:
         evaled_ops_list.append(evaled_ops_np)
 
@@ -1368,7 +1398,7 @@ class LFADS(object):
 
     """
     hps = self.hps
-    all_data_names = datasets.keys()
+    all_data_names = list(datasets.keys())
     data_name = np.random.permutation(all_data_names)[0]
     data_dict = datasets[data_name]
     has_valid_set = True if data_dict['valid_data'] is not None else False
@@ -1454,7 +1484,7 @@ class LFADS(object):
     """
     hps = self.hps
     has_any_valid_set = False
-    for data_dict in datasets.values():
+    for data_dict in list(datasets.values()):
       if data_dict['valid_data'] is not None:
         has_any_valid_set = True
         break
@@ -1794,7 +1824,7 @@ class LFADS(object):
     hps = self.hps
     kind = hps.kind
 
-    for data_name, data_dict in datasets.items():
+    for data_name, data_dict in list(datasets.items()):
       data_tuple = [('train', data_dict['train_data'],
                      data_dict['train_ext_input']),
                     ('valid', data_dict['valid_data'],
@@ -1930,7 +1960,7 @@ class LFADS(object):
     if not use_nested:
       return vars_dict
 
-    var_names = vars_dict.keys()
+    var_names = list(vars_dict.keys())
     nested_vars_dict = {}
     current_dict = nested_vars_dict
     for v, var_name in enumerate(var_names):

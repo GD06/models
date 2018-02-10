@@ -13,9 +13,9 @@
 # limitations under the License.
 #
 # ==============================================================================
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import matplotlib
 matplotlib.use('Agg')
@@ -42,7 +42,7 @@ def _plot_item(W, name, full_name, nspaces):
 def all_plot(d, full_name="", exclude="", nspaces=0):
   """Recursively plot all the LFADS model parameters in the nested
   dictionary."""
-  for k, v in d.iteritems():
+  for k, v in d.items():
     this_name = full_name+"/"+k
     if isinstance(v, dict):
       all_plot(v, full_name=this_name, exclude=exclude, nspaces=nspaces+4)
@@ -64,7 +64,7 @@ def plot_time_series(vals_bxtxn, bidx=None, n_to_plot=np.inf, scale=1.0,
   if n_to_plot > N:
     n_to_plot = N
 
-  plt.plot(vals_txn[:,0:n_to_plot] + scale*np.array(range(n_to_plot)),
+  plt.plot(vals_txn[:,0:n_to_plot] + scale*np.array(list(range(n_to_plot))),
            color=color, lw=1.0)
   plt.axis('tight')
   if title:
@@ -104,7 +104,7 @@ def plot_lfads_timeseries(data_bxtxn, model_vals, ext_input_bxtxi=None,
                      scale=scale)
 
   input_title = ""
-  if "controller_outputs" in model_vals.keys():
+  if "controller_outputs" in list(model_vals.keys()):
     input_title += " Controller Output"
     plt.subplot(nrows,2,3+subplot_cidx)
     u_t = model_vals['controller_outputs'][0:-1]

@@ -34,7 +34,7 @@ the scored human judgement.
 
 """
 
-from __future__ import print_function
+
 import scipy.stats
 import sys
 from getopt import GetoptError, getopt

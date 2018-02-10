@@ -13,13 +13,13 @@
 # limitations under the License.
 #
 # ==============================================================================
-from __future__ import print_function
+
 
 import h5py
 import numpy as np
 import os
 
-from utils import write_datasets
+from lfads.utils import write_datasets
 import matplotlib
 import matplotlib.pyplot as plt
 import scipy.signal
@@ -249,14 +249,14 @@ def add_alignment_projections(datasets, npcs, ntime=None, nsamples=None):
   channel_idxs = {}
   conditions_all = {}
   nconditions_all = 0
-  for name, dataset in datasets.items():
+  for name, dataset in list(datasets.items()):
     cidxs = np.where(dataset['P_sxn'])[1] # non-zero entries in columns
     channel_idxs[name] = [cidxs[0], cidxs[-1]+1]
     nchannels_all += cidxs[-1]+1 - cidxs[0]
     conditions_all[name] = np.unique(dataset['condition_labels_train'])
 
   all_conditions_list = \
-      np.unique(np.ndarray.flatten(np.array(conditions_all.values())))
+      np.unique(np.ndarray.flatten(np.array(list(conditions_all.values()))))
   nconditions_all = all_conditions_list.shape[0]
 
   if ntime is None:
@@ -267,7 +267,7 @@ def add_alignment_projections(datasets, npcs, ntime=None, nsamples=None):
   # In the data workup in the paper, Chethan did intra condition
   # averaging, so let's do that here.
   avg_data_all = {}
-  for name, conditions in conditions_all.items():
+  for name, conditions in list(conditions_all.items()):
     dataset = datasets[name]
     avg_data_all[name] = {}
     for cname in conditions:
@@ -278,7 +278,7 @@ def add_alignment_projections(datasets, npcs, ntime=None, nsamples=None):
 
   # Visualize this in the morning.
   all_data_nxtc = np.zeros([nchannels_all, ntime * nconditions_all])
-  for name, dataset in datasets.items():
+  for name, dataset in list(datasets.items()):
     cidx_s = channel_idxs[name][0]
     cidx_f = channel_idxs[name][1]
     for cname in conditions_all[name]:
@@ -312,7 +312,7 @@ def add_alignment_projections(datasets, npcs, ntime=None, nsamples=None):
   # Now for each dataset, we regress the channel data onto the top
   # pcs, and this will be our alignment matrix for that dataset.
   # |B - A*W|^2
-  for name, dataset in datasets.items():
+  for name, dataset in list(datasets.items()):
     cidx_s = channel_idxs[name][0]
     cidx_f = channel_idxs[name][1]
     all_data_zm_chxtc = all_data_zm_nxtc[cidx_s:cidx_f,:] # ch for channel

@@ -13,14 +13,14 @@
 # limitations under the License.
 #
 # ==============================================================================
-from __future__ import print_function
+
 
 import h5py
 import numpy as np
 import os
 import tensorflow as tf         # used for flags here
 
-from utils import write_datasets
+from lfads.utils import write_datasets
 from synthetic_data_utils import add_alignment_projections, generate_data
 from synthetic_data_utils import generate_rnn, get_train_n_valid_inds
 from synthetic_data_utils import nparray_and_transpose
@@ -58,7 +58,6 @@ flags.DEFINE_float("input_magnitude", 20.0,
 flags.DEFINE_float("max_firing_rate", 30.0, "Map 1.0 of RNN to a spikes per second")
 FLAGS = flags.FLAGS
 
-
 # Note that with N small, (as it is 25 above), the finite size effects
 # will have pretty dramatic effects on the dynamics of the random RNN.
 # If you want more complex dynamics, you'll have to run the script a
@@ -78,7 +77,7 @@ nreplications = FLAGS.nreplications
 E = nreplications * C         # total number of trials
 # S is the number of measurements in each datasets, w/ each
 # dataset having a different set of observations.
-ndatasets = N/S                 # ok if rounded down
+ndatasets = int(N/S)                 # ok if rounded down
 train_percentage = FLAGS.train_percentage
 ntime_steps = int(T / FLAGS.dt)
 # End of user parameters

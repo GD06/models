@@ -51,8 +51,8 @@ Swivel can be run "stand-alone" or "distributed".  The latter involves running
 at least one parameter server process, along with one or more worker processes.
 """
 
-from __future__ import division
-from __future__ import print_function
+
+
 
 import glob
 import itertools
@@ -62,6 +62,8 @@ import random
 import numpy as np
 import scipy.stats
 import tensorflow as tf
+
+from cg_profiler.cg_graph import CompGraph
 
 flags = tf.app.flags
 
@@ -213,14 +215,18 @@ class Model(object):
 
   def _read_vocab(self, filename):
     """Reads the vocabulary file."""
-    with open(filename) as lines:
+    with open(filename, 'rb') as f:
+      b_lines = f.read()
+      lines = b_lines.decode('utf-8').split('\n')
+      #lines = f.readlines()
       ix_to_word = [line.strip() for line in lines]
       word_to_ix = {word: ix for ix, word in enumerate(ix_to_word)}
       return ix_to_word, word_to_ix
 
   def _read_marginals_file(self, filename):
     """Reads text file with one number per line to an array."""
-    with open(filename) as lines:
+    with open(filename, 'r') as f:
+      lines = f.readlines()
       return [float(line.strip()) for line in lines]
 
   def _count_matrix_input(self, filenames, submatrix_rows, submatrix_cols):
@@ -271,8 +277,8 @@ class Model(object):
     """
     with open(filename, 'r') as fh:
       tuples = (line.strip().split('\t') for line in fh.read().splitlines())
-      word1s, word2s, sims = zip(*tuples)
-      actuals = map(float, sims)
+      word1s, word2s, sims = list(zip(*tuples))
+      actuals = list(map(float, sims))
 
     v1s_t = tf.nn.embedding_lookup(
         self.row_embedding,
@@ -327,7 +333,7 @@ class Model(object):
           analogy_ixs.append([self.row_word_to_ix.get(w, 0) for w in parts])
 
     # man:king :: woman:queen => king - man + woman == queen
-    ix1s, ix2s, ix3s, _ = zip(*analogy_ixs)
+    ix1s, ix2s, ix3s, _ = list(zip(*analogy_ixs))
     v1s_t, v2s_t, v3s_t = (
         tf.nn.l2_normalize(
             tf.nn.embedding_lookup(self.row_embedding, ixs),
@@ -349,7 +355,7 @@ class Model(object):
 
     def _op(preds_ixs):
       correct, total = 0, 0
-      for pred_ixs, actual_ixs in itertools.izip(preds_ixs, analogy_ixs):
+      for pred_ixs, actual_ixs in zip(preds_ixs, analogy_ixs):
         pred_ixs = [ix for ix in pred_ixs if ix not in actual_ixs[:3]]
         correct += pred_ixs[0] == actual_ixs[3]
         total += 1
@@ -367,8 +373,8 @@ class Model(object):
         for index, word in enumerate(vocab_f):
           word = word.strip()
           embedding = embeddings[index]
-          print('\t'.join([word.strip()] + [str(x) for x in embedding]),
-                file=out_f)
+          #print('\t'.join([word.strip()] + [str(x) for x in embedding]),
+          #      file=out_f)
 
   def write_embeddings(self, config, session):
     """Writes row and column embeddings disk."""
@@ -454,23 +460,50 @@ def main(_):
       tf.summary.scalar('loss', model.loss_op)
 
     # Train on, soldier.
-    supervisor = tf.train.Supervisor(
-        logdir=FLAGS.output_base_path,
-        is_chief=(FLAGS.task_index == 0),
-        save_summaries_secs=60,
-        recovery_wait_secs=5)
+    #supervisor = tf.train.Supervisor(
+    #    logdir=FLAGS.output_base_path,
+    #    is_chief=(FLAGS.task_index == 0),
+    #    save_summaries_secs=60,
+    #    recovery_wait_secs=5)
 
     max_step = FLAGS.num_epochs * model.steps_per_epoch
     master = server.target if server else ''
-    with supervisor.managed_session(master) as session:
+    #with supervisor.managed_session(master) as session:
+    with tf.Session() as sess:
+
+      print('Is finalized? ', tf.get_default_graph().finalized)
+      tf.train.start_queue_runners(sess=sess)
+      init = tf.global_variables_initializer()
+      sess.run(init)
+      init = tf.local_variables_initializer()
+      sess.run(init)
+
       local_step = 0
-      global_step = session.run(model.global_step)
-      while not supervisor.should_stop() and global_step < max_step:
-        global_step, loss, _ = session.run([
+      global_step = sess.run(model.global_step)
+      #while not supervisor.should_stop() and global_step < max_step:
+      while global_step < max_step:
+        global_step, loss, _ = sess.run([
             model.global_step, model.loss_op, model.train_op])
 
         if not np.isfinite(loss):
           raise ValueError('non-finite cost at step %d' % global_step)
+
+        options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+        run_metadata = tf.RunMetadata()
+
+        loss = sess.run(model.loss_op, options=options, run_metadata=run_metadata)
+        cg = CompGraph('swivel', run_metadata, tf.get_default_graph())
+
+        cg_tensor_dict = cg.get_tensors()
+        cg_sorted_keys = sorted(cg_tensor_dict.keys())
+        cg_sorted_items = []
+        for cg_key in cg_sorted_keys:
+          cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+        cg_sorted_shape = sess.run(cg_sorted_items)
+        cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                       'swivel.pickle')
+        exit(0)
 
         local_step += 1
         if local_step % 10 == 0:
@@ -479,10 +512,10 @@ def main(_):
               local_step, global_step, loss, 100.0 * global_step / max_step)
 
       if FLAGS.task_index == 0:
-        supervisor.saver.save(
-            session, supervisor.save_path, global_step=global_step)
-
-        model.write_embeddings(FLAGS, session)
+        #supervisor.saver.save(
+        #    session, supervisor.save_path, global_step=global_step)
+        #model.write_embeddings(FLAGS, session)
+        model.write_embeddings(FLAGS, sess)
 
 
 if __name__ == '__main__':

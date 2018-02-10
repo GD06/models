@@ -13,9 +13,9 @@
 # limitations under the License.
 #
 # ==============================================================================
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 from lfads import LFADS
 import numpy as np
@@ -35,7 +35,7 @@ OUTPUT_FILENAME_STEM = ""
 DEVICE = "gpu:0" # "cpu:0", or other gpus, e.g. "gpu:1"
 MAX_CKPT_TO_KEEP = 5
 MAX_CKPT_TO_KEEP_LVE = 5
-PS_NEXAMPLES_TO_PROCESS = 1e8 # if larger than number of examples, process all
+PS_NEXAMPLES_TO_PROCESS = 100000000 # if larger than number of examples, process all
 EXT_INPUT_DIM = 0
 IC_DIM = 64
 FACTORS_DIM = 50
@@ -60,7 +60,7 @@ CELL_CLIP_VALUE = 5.0
 KEEP_PROB = 0.95
 TEMPORAL_SPIKE_JITTER_WIDTH = 0
 OUTPUT_DISTRIBUTION = 'poisson' # 'poisson' or 'gaussian'
-NUM_STEPS_FOR_GEN_IC = np.inf # set to num_steps if greater than num_steps
+NUM_STEPS_FOR_GEN_IC = 100000000 # set to num_steps if greater than num_steps
 
 DATA_DIR = "/tmp/rnn_synth_data_v1.0/"
 DATA_FILENAME_STEM = "chaotic_rnn_inputs_g1p5"
@@ -101,6 +101,9 @@ flags.DEFINE_string("output_dist", OUTPUT_DISTRIBUTION,
 flags.DEFINE_boolean("allow_gpu_growth", False,
                      "If true, only allocate amount of memory needed for \
                      Session. Otherwise, use full GPU memory.")
+
+flags.DEFINE_string("model_name", "lfads",
+                    "The model name of model built.")
 
 # DATA
 flags.DEFINE_string("data_dir", DATA_DIR, "Data for training")
@@ -209,9 +212,9 @@ flags.DEFINE_float("co_prior_var_scale", CO_PRIOR_VAR_SCALE,
                    "Variance of control input prior distribution.")
 
 
-flags.DEFINE_float("prior_ar_atau",  PRIOR_AR_AUTOCORRELATION, 
+flags.DEFINE_float("prior_ar_atau",  PRIOR_AR_AUTOCORRELATION,
                    "Initial autocorrelation of AR(1) priors.")
-flags.DEFINE_float("prior_ar_nvar", PRIOR_AR_PROCESS_VAR, 
+flags.DEFINE_float("prior_ar_nvar", PRIOR_AR_PROCESS_VAR,
                    "Initial noise variance for AR(1) priors.")
 flags.DEFINE_boolean("do_train_prior_ar_atau", DO_TRAIN_PRIOR_AR_ATAU,
                      "Is the value for atau an init, or the constant value?")
@@ -254,13 +257,13 @@ flags.DEFINE_boolean("do_causal_controller",
 # Strictly speaking, feeding either the factors or the rates to the controller
 # violates causality, since the g0 gets to see all the data. This may or may not
 # be only a theoretical concern.
-flags.DEFINE_boolean("do_feed_factors_to_controller", 
-                     DO_FEED_FACTORS_TO_CONTROLLER, 
+flags.DEFINE_boolean("do_feed_factors_to_controller",
+                     DO_FEED_FACTORS_TO_CONTROLLER,
                      "Should factors[t-1] be input to controller at time t?")
 flags.DEFINE_string("feedback_factors_or_rates", FEEDBACK_FACTORS_OR_RATES,
                     "Feedback the factors or the rates to the controller? \
                      Acceptable values: 'factors' or 'rates'.")
-flags.DEFINE_integer("controller_input_lag", CONTROLLER_INPUT_LAG, 
+flags.DEFINE_integer("controller_input_lag", CONTROLLER_INPUT_LAG,
                      "Time lag on the encoding to controller t-lag for \
                      forward, t+lag for reverse.")
 
@@ -380,7 +383,7 @@ flags.DEFINE_integer("l2_increase_steps", L2_INCREASE_STEPS,
 FLAGS = flags.FLAGS
 
 
-def build_model(hps, kind="train", datasets=None):
+def build_model(hps, kind="train", datasets=None, model_name="lfads"):
   """Builds a model from either random initialization, or saved parameters.
 
   Args:
@@ -397,7 +400,7 @@ def build_model(hps, kind="train", datasets=None):
   if build_kind == "write_model_params":
     build_kind = "train"
   with tf.variable_scope("LFADS", reuse=None):
-    model = LFADS(hps, kind=build_kind, datasets=datasets)
+    model = LFADS(hps, kind=build_kind, datasets=datasets, model_name=model_name)
 
   if not os.path.exists(hps.lfads_save_dir):
     print("Save directory %s does not exist, creating it." % hps.lfads_save_dir)
@@ -451,7 +454,7 @@ def jsonify_dict(d):
   Creates a shallow-copied dictionary first, then accomplishes string
   conversion.
 
-  Args: 
+  Args:
     d: hyperparameter dictionary
 
   Returns: hyperparameter dictionary with bool's as strings
@@ -464,7 +467,7 @@ def jsonify_dict(d):
     else:
       return "false"
 
-  for key in d2.keys():
+  for key in list(d2.keys()):
     if isinstance(d2[key], bool):
       d2[key] = jsonify_bool(d2[key])
   return d2
@@ -565,7 +568,7 @@ class hps_dict_to_obj(dict):
     self[key] = value
 
 
-def train(hps, datasets):
+def train(hps, datasets, model_name):
   """Train the LFADS model.
 
   Args:
@@ -573,7 +576,8 @@ def train(hps, datasets):
     datasets: A dictionary of data dictionaries.  The dataset dict is simply a
       name(string)-> data dictionary mapping (See top of lfads.py).
   """
-  model = build_model(hps, kind="train", datasets=datasets)
+  model = build_model(hps, kind="train", datasets=datasets,
+                      model_name=model_name)
   if hps.do_reset_learning_rate:
     sess = tf.get_default_session()
     sess.run(model.learning_rate.initializer)
@@ -632,9 +636,9 @@ def write_model_samples(hps, datasets, dataset_name=None, output_fname=None):
   else:
     output_fname = output_fname + "model_runs_" + hps.kind
   if not dataset_name:
-    dataset_name = datasets.keys()[0]
+    dataset_name = list(datasets.keys())[0]
   else:
-    if dataset_name not in datasets.keys():
+    if dataset_name not in list(datasets.keys()):
       raise ValueError("Invalid dataset name '%s'."%(dataset_name))
   model = build_model(hps, kind=hps.kind, datasets=datasets)
   model.write_model_samples(dataset_name, output_fname)
@@ -659,7 +663,7 @@ def write_model_parameters(hps, output_fname=None, datasets=None):
   fname = os.path.join(hps.lfads_save_dir, output_fname)
   print("Writing model parameters to: ", fname)
   # save the optimizer params as well
-  model = build_model(hps, kind="write_model_params", datasets=datasets) 
+  model = build_model(hps, kind="write_model_params", datasets=datasets)
   model_params = model.eval_model_parameters(use_nested=False,
                                              include_strs="LFADS")
   utils.write_data(fname, model_params, compression=None)
@@ -705,7 +709,7 @@ def load_datasets(data_dir, data_filename_stem):
   """
   print("Reading data from ", data_dir)
   datasets = utils.read_datasets(data_dir, data_filename_stem)
-  for k, data_dict in datasets.items():
+  for k, data_dict in list(datasets.items()):
     datasets[k] = clean_data_dict(data_dict)
 
     train_total_size = len(data_dict['train_data'])
@@ -747,7 +751,7 @@ def main(_):
 
   # also store down the dimensionality of the data
   # - just pull from one set, required to be same for all sets
-  hps.num_steps = datasets.values()[0]['num_steps']
+  hps.num_steps = list(datasets.values())[0]['num_steps']
   hps.ndatasets = len(hps.dataset_names)
 
   if hps.num_steps_for_gen_ic > hps.num_steps:
@@ -762,7 +766,7 @@ def main(_):
   with sess.as_default():
     with tf.device(hps.device):
       if kind == "train":
-        train(hps, datasets)
+        train(hps, datasets, FLAGS.model_name)
       elif kind == "posterior_sample_and_average":
         write_model_runs(hps, datasets, hps.output_filename_stem)
       elif kind == "prior_sample":
@@ -775,4 +779,4 @@ def main(_):
 
 if __name__ == "__main__":
     tf.app.run()
- 
+

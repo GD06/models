@@ -16,7 +16,7 @@
 
 """Simple tool for inspecting nearest neighbors and analogies."""
 
-from __future__ import print_function
+
 import re
 import sys
 from getopt import GetoptError, getopt

@@ -13,14 +13,14 @@
 # limitations under the License.
 #
 # ==============================================================================
-from __future__ import print_function
+
 
 import h5py
 import numpy as np
 import os
 import tensorflow as tf
 
-from utils import write_datasets
+from lfads.utils import write_datasets
 from synthetic_data_utils import normalize_rates
 from synthetic_data_utils import get_train_n_valid_inds, nparray_and_transpose
 from synthetic_data_utils import spikify_data, split_list_by_inds
@@ -47,12 +47,12 @@ flags.DEFINE_float("max_firing_rate", 30.0,
 flags.DEFINE_float("u_std", 0.25,
                    "Std dev of input to integration to bound model")
 flags.DEFINE_string("checkpoint_path", "SAMPLE_CHECKPOINT",
-                    """Path to directory with checkpoints of model 
+                    """Path to directory with checkpoints of model
                     trained on integration to bound task. Currently this
                     is a placeholder which tells the code to grab the
-                    checkpoint that is provided with the code 
-                    (in /trained_itb/..). If you have your own checkpoint 
-                    you would like to restore, you would point it to 
+                    checkpoint that is provided with the code
+                    (in /trained_itb/..). If you have your own checkpoint
+                    you would like to restore, you would point it to
                     that path.""")
 FLAGS = flags.FLAGS
 
@@ -77,7 +77,7 @@ def get_data_batch(batch_size, T, rng, u_std):
   u_bxt = rng.randn(batch_size, T) * u_std
   running_sum_b = np.zeros([batch_size])
   labels_bxt = np.zeros([batch_size, T])
-  for t in xrange(T):
+  for t in range(T):
     running_sum_b += u_bxt[:, t]
     labels_bxt[:, t] += running_sum_b
   labels_bxt = np.clip(labels_bxt, -1, 1)
@@ -134,7 +134,7 @@ with tf.Session() as sess:
     u_1xt, outs_1xt = get_data_batch(batch_size, ntimesteps, u_rng, FLAGS.u_std)
 
     feed_dict = {}
-    for t in xrange(ntimesteps):
+    for t in range(ntimesteps):
       feed_dict[inputs_ph_t[t]] = np.reshape(u_1xt[:,t], (batch_size,-1))
 
     states_t_bxn, outputs_t_bxn = sess.run([states_t, outputs_t],
@@ -143,7 +143,7 @@ with tf.Session() as sess:
     outputs_t_bxn = np.squeeze(np.asarray(outputs_t_bxn))
     r_sxt = np.dot(P_nxn, states_nxt)
 
-    for s in xrange(nspikifications):
+    for s in range(nspikifications):
       data_e.append(r_sxt)
       u_e.append(u_1xt)
       outs_e.append(outputs_t_bxn)

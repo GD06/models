@@ -108,7 +108,7 @@ def create_vocabulary(lines):
 
   sys.stdout.write('\n')
 
-  vocab = [(tok, n) for tok, n in vocab.iteritems() if n >= FLAGS.min_count]
+  vocab = [(tok, n) for tok, n in vocab.items() if n >= FLAGS.min_count]
   vocab.sort(key=lambda kv: (-kv[1], kv[0]))
 
   num_words = min(len(vocab), FLAGS.max_vocab)
@@ -118,7 +118,7 @@ def create_vocabulary(lines):
   if not num_words:
     raise Exception('empty vocabulary')
 
-  print 'vocabulary contains %d tokens' % num_words
+  print('vocabulary contains %d tokens' % num_words)
 
   vocab = vocab[:num_words]
   return [tok for tok, n in vocab]
@@ -128,9 +128,11 @@ def write_vocab_and_sums(vocab, sums, vocab_filename, sums_filename):
   """Writes vocabulary and marginal sum files."""
   with open(os.path.join(FLAGS.output_dir, vocab_filename), 'w') as vocab_out:
     with open(os.path.join(FLAGS.output_dir, sums_filename), 'w') as sums_out:
-      for tok, cnt in itertools.izip(vocab, sums):
-        print >> vocab_out, tok
-        print >> sums_out, cnt
+      for tok, cnt in zip(vocab, sums):
+        vocab_out.write(tok)
+        sums_out.write(str(cnt))
+        #print(tok, file=vocab_out)
+        #print(cnt, file=sums_out)
 
 
 def compute_coocs(lines, vocab):
@@ -157,7 +159,7 @@ def compute_coocs(lines, vocab):
       shardfiles[(row, col)] = open(filename, 'w+')
 
   def flush_coocs():
-    for (row_id, col_id), cnt in coocs.iteritems():
+    for (row_id, col_id), cnt in coocs.items():
       row_shard = row_id % num_shards
       row_off = row_id / num_shards
       col_shard = col_id % num_shards
@@ -176,14 +178,12 @@ def compute_coocs(lines, vocab):
   for lineno, line in enumerate(lines, start=1):
     # Computes the word IDs for each word in the sentence.  This has the effect
     # of "stretching" the window past OOV tokens.
-    wids = filter(
-        lambda wid: wid is not None,
-        (word_to_id.get(w) for w in words(line)))
+    wids = [wid for wid in (word_to_id.get(w) for w in words(line)) if wid is not None]
 
-    for pos in xrange(len(wids)):
+    for pos in range(len(wids)):
       lid = wids[pos]
       window_extent = min(FLAGS.window_size + 1, len(wids) - pos)
-      for off in xrange(1, window_extent):
+      for off in range(1, window_extent):
         rid = wids[pos + off]
         pair = (min(lid, rid), max(lid, rid))
         count = 1.0 / off
@@ -223,7 +223,7 @@ def write_shards(vocab, shardfiles):
   num_shards = len(vocab) / FLAGS.shard_size
 
   ix = 0
-  for (row, col), fh in shardfiles.iteritems():
+  for (row, col), fh in shardfiles.items():
     ix += 1
     sys.stdout.write('\rwriting shard %d/%d' % (ix, len(shardfiles)))
     sys.stdout.flush()
@@ -309,7 +309,7 @@ def main(_):
   write_vocab_and_sums(vocab, sums, 'row_vocab.txt', 'row_sums.txt')
   write_vocab_and_sums(vocab, sums, 'col_vocab.txt', 'col_sums.txt')
 
-  print 'done!'
+  print('done!')
 
 
 if __name__ == '__main__':

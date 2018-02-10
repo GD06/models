@@ -40,7 +40,7 @@ have the same number of columns (i.e., be the same dimension).
 
 """
 
-from itertools import izip
+
 from getopt import GetoptError, getopt
 import os
 import struct
@@ -49,8 +49,8 @@ import sys
 try:
   opts, args = getopt(
       sys.argv[1:], 'o:v:', ['output=', 'vocab='])
-except GetoptError, e:
-  print >> sys.stderr, e
+except GetoptError as e:
+  print(e, file=sys.stderr)
   sys.exit(2)
 
 opt_output = 'vecs.bin'
@@ -65,13 +65,13 @@ def go(fhs):
   fmt = None
   with open(opt_vocab, 'w') as vocab_out:
     with open(opt_output, 'w') as vecs_out:
-      for lines in izip(*fhs):
+      for lines in zip(*fhs):
         parts = [line.split() for line in lines]
         token = parts[0][0]
         if any(part[0] != token for part in parts[1:]):
           raise IOError('vector files must be aligned')
 
-        print >> vocab_out, token
+        print(token, file=vocab_out)
 
         vec = [sum(float(x) for x in xs) for xs in zip(*parts)[1:]]
         if not fmt:

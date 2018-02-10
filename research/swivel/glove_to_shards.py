@@ -36,7 +36,7 @@ Options
       Specifies the shard size; default 4096.
 """
 
-from __future__ import print_function
+
 
 import itertools
 import os
@@ -92,7 +92,7 @@ def make_shard_files(coocs, nshards, vocab_sz):
 
       shard_files[(row, col)] = open(filename, 'w+')
 
-  for ix in xrange(ncoocs):
+  for ix in range(ncoocs):
     if ix % 1000000 == 0:
       sys.stdout.write('\rsharding co-occurrences: %0.1f%% (%d/%d)' % (
           100.0 * ix / ncoocs, ix, ncoocs))
@@ -127,7 +127,7 @@ def make_shard_files(coocs, nshards, vocab_sz):
 
   sys.stdout.write('\n')
 
-  if any(abs(r - c) > 0.1 for r, c in itertools.izip(row_sums, col_sums)):
+  if any(abs(r - c) > 0.1 for r, c in zip(row_sums, col_sums)):
     print('WARNING! Row and column marginals differ; is your matrix symmetric?',
           file=sys.stderr)
 
@@ -156,7 +156,7 @@ def main(_):
   filename = os.path.join(FLAGS.output_dir, 'shards.recs')
   with tf.python_io.TFRecordWriter(filename) as writer:
     ix = 0
-    for (row, col), fh in shard_files.iteritems():
+    for (row, col), fh in shard_files.items():
       ix += 1
       sys.stdout.write('\rwriting shard %d/%d' % (ix, len(shard_files)))
       sys.stdout.flush()

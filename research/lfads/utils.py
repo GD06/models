@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 # ==============================================================================
-from __future__ import print_function
+
 
 import os
 import h5py
@@ -187,7 +187,7 @@ def write_data(data_fname, data_dict, use_json=False, compression=None):
   else:
     try:
       with h5py.File(data_fname, 'w') as hf:
-        for k, v in data_dict.items():
+        for k, v in list(data_dict.items()):
           clean_k = k.replace('/', '_')
           if clean_k is not k:
             print('Warning: saving variable with name: ', k, ' as ', clean_k)
@@ -212,7 +212,7 @@ def read_data(data_fname):
 
   try:
     with h5py.File(data_fname, 'r') as hf:
-      data_dict = {k: np.array(v) for k, v in hf.items()}
+      data_dict = {k: np.array(v) for k, v in list(hf.items())}
       return data_dict
   except IOError:
     print("Cannot open %s for reading." % data_fname)
@@ -236,7 +236,7 @@ def write_datasets(data_path, data_fname_stem, dataset_dict, compression=None):
   """
 
   full_name_stem = os.path.join(data_path, data_fname_stem)
-  for s, data_dict in dataset_dict.items():
+  for s, data_dict in list(dataset_dict.items()):
     write_data(full_name_stem + "_" + s, data_dict, compression=compression)
 
 
@@ -353,7 +353,7 @@ def flatten(list_of_lists):
     if isinstance(item, list):
       flat_list += item
       l = len(item)
-      idxs = range(start_idx, start_idx+l)
+      idxs = list(range(start_idx, start_idx+l))
       start_idx = start_idx+l
     else:                   # a value
       flat_list.append(item)

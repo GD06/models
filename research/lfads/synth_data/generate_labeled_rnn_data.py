@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 # ==============================================================================
-from __future__ import print_function
+
 
 import os
 import h5py
@@ -24,7 +24,7 @@ from synthetic_data_utils import get_train_n_valid_inds
 from synthetic_data_utils import nparray_and_transpose
 from synthetic_data_utils import spikify_data, split_list_by_inds
 import tensorflow as tf
-from utils import write_datasets
+from lfads.utils import write_datasets
 
 DATA_DIR = "rnn_synth_data_v1.0"
 
@@ -96,7 +96,7 @@ spikes_b = spikify_data(rates_b, rng, rnn_b['dt'], rnn_b['max_firing_rate'])
 # not the best way to do this but E is small enough
 rates = []
 spikes = []
-for trial in xrange(E):
+for trial in range(E):
   if rnn_to_use[trial] == 0:
     rates.append(rates_a[trial])
     spikes.append(spikes_a[trial])

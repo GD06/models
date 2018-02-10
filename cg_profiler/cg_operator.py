@@ -79,7 +79,9 @@ class Operator:
                       'RandomStandardNormal', 'ShapeN', 'Enter', 'Exit',
                       'Size', 'NonMaxSuppressionV2', 'RandomShuffleQueueV2',
                       'RandomUniform', 'TopKV2', 'DecodeJpeg', 'Variable',
-                      'Rank', 'Unique', 'Assign', 'RandomShuffle'}
+                      'Rank', 'Unique', 'Assign', 'RandomShuffle', 'ParseExample',
+                      'ReaderReadV2', 'WholeFileReaderV2', 'L2Loss', 'ApplyAdam',
+                      'BroadcastGradientArgs', 'ConcatOffset'}
         # How to deal with sort operators
 
         if self.keyword_filter is not None:
@@ -115,7 +117,8 @@ class Operator:
                         'DepthwiseConv2dNative', 'CropAndResize', 'FloorMod',
                         'SpaceToBatchND', 'BatchToSpaceND', 'ReverseSequence',
                         'All', 'Multinomial', 'SparseTensorDenseAdd',
-                        'Conv3DBackpropInputV2', 'FloorDiv'}
+                        'Conv3DBackpropInputV2', 'FloorDiv', 'TanhGrad',
+                        'SigmoidGrad', 'Reciprocal', 'Lgamma', 'RsqrtGrad'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
                           'SparseSoftmaxCrossEntropyWithLogits'}
@@ -188,7 +191,8 @@ class Operator:
                                 'LogicalAnd', 'Tile', 'CropAndResize', 'FloorMod',
                                 'SpaceToBatchND', 'BatchToSpaceND', 'DynamicStitch',
                                 'ReverseSequence', 'Multinomial', 'SparseTensorDenseAdd',
-                                'FloorDiv'})
+                                'FloorDiv', 'TanhGrad', 'SigmoidGrad', 'Reciprocal',
+                                'Lgamma', 'RsqrtGrad'})
 
         # 2-type elementwise operator
         elementwise_op_set.append({'Relu6'})
@@ -270,7 +274,8 @@ class Operator:
                               'LogicalAnd', 'Tile', 'Relu6', 'CropAndResize',
                               'FloorMod', 'SpaceToBatchND', 'BatchToSpaceND',
                               'DynamicStitch', 'ReverseSequence', 'Multinomial',
-                              'SparseTensorDenseAdd', 'FloorDiv'}
+                              'SparseTensorDenseAdd', 'FloorDiv', 'TanhGrad',
+                              'SigmoidGrad', 'Reciprocal', 'Lgamma', 'RsqrtGrad'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean', 'All'}
 
