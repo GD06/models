@@ -58,6 +58,7 @@ class Operator:
         self.mem_trans = self._calculate_mem_trans(tf_repr)
         self.comp_instrs = self._calculate_comp_instrs(tf_repr)
         self.parallelism = self._calculate_parallelism(tf_repr)
+        self.regular = self._calculate_regular(tf_repr)
 
         return
 
@@ -78,8 +79,8 @@ class Operator:
                       'NoOp', 'ExpandDims', 'RandomUniformInt',
                       'RandomStandardNormal', 'ShapeN', 'Enter', 'Exit',
                       'Size', 'NonMaxSuppressionV2', 'RandomShuffleQueueV2',
-                      'RandomUniform', 'TopKV2', 'DecodeJpeg', 'Variable',
-                      'Rank', 'Unique', 'Assign', 'RandomShuffle', 'ParseExample',
+                      'RandomUniform', 'DecodeJpeg', 'Variable', 'Rank',
+                      'Unique', 'Assign', 'RandomShuffle', 'ParseExample',
                       'ReaderReadV2', 'WholeFileReaderV2', 'L2Loss', 'ApplyAdam',
                       'BroadcastGradientArgs', 'ConcatOffset'}
         # How to deal with sort operators
@@ -96,6 +97,22 @@ class Operator:
             return True
 
         return False
+
+    def _calculate_regular(self, tf_opr):
+
+        if self.is_aid_op:
+            return 1
+
+        irregular_op_set = {'Gather', 'GatherV2', 'SparseToDense',
+                            'SparseTensorDenseAdd', 'TopKV2', 'ScatterUpdate',
+                            'ScatterAdd', 'DynamicStitch', 'HashTableV2',
+                            'LookupTableV2'}
+
+        if self.op_type in irregular_op_set:
+            return 0
+        else:
+            return 1
+
 
     def _calculate_mem_trans(self, tf_opr):
 
@@ -118,7 +135,8 @@ class Operator:
                         'SpaceToBatchND', 'BatchToSpaceND', 'ReverseSequence',
                         'All', 'Multinomial', 'SparseTensorDenseAdd',
                         'Conv3DBackpropInputV2', 'FloorDiv', 'TanhGrad',
-                        'SigmoidGrad', 'Reciprocal', 'Lgamma', 'RsqrtGrad'}
+                        'SigmoidGrad', 'Reciprocal', 'Lgamma', 'RsqrtGrad',
+                        'TopKV2'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
                           'SparseSoftmaxCrossEntropyWithLogits'}
@@ -235,6 +253,9 @@ class Operator:
         if self.op_type == 'DepthwiseConv2dNative':
             return self._cal_comp_depthwiseconv2d(tf_opr)
 
+        if self.op_type == 'TopKV2':
+            return self._cal_comp_topk(tf_opr)
+
         if self.op_type in scatter_op_set:
             return self._cal_comp_scatter(tf_opr)
 
@@ -247,9 +268,10 @@ class Operator:
         if self.op_type in reduce_op_set:
             return self._cal_comp_reduce(tf_opr)
 
+        # We use big-O to measure the computation complexity
         for k in range(len(elementwise_op_set)):
             if self.op_type in elementwise_op_set[k]:
-                return self._cal_comp_elementwise(tf_opr, k + 1)
+                return self._cal_comp_elementwise(tf_opr, 1)
 
         print('op_type: ', self.op_type)
         raise NotImplementedError
@@ -306,6 +328,9 @@ class Operator:
         if self.op_type == 'DepthwiseConv2dNative':
             return self._cal_par_depthwiseconv2d(tf_opr)
 
+        if self.op_type == 'TopKV2':
+            return self._cal_par_topk(tf_opr)
+
         if self.op_type in softmax_op_set:
             return self._cal_par_softmax(tf_opr)
 
@@ -346,7 +371,8 @@ class Operator:
 
     def _cal_comp_matmul(self, tf_opr):
         m, n, k = self._extract_m_n_k()
-        comp_ops = 2 * m * n * k
+        #comp_ops = 2 * m * n * k
+        comp_ops = m * n * k
         return comp_ops
 
     def _cal_comp_batchmatmul(self, tf_opr):
@@ -360,7 +386,8 @@ class Operator:
         k_sqr = k_sqr / np.prod(np.array(c_shape))
         k = math.sqrt(k_sqr)
 
-        comp_ops = 2 * batch_size * k * np.prod(np.array(c_shape))
+        #comp_ops = 2 * batch_size * k * np.prod(np.array(c_shape))
+        comp_ops = batch_size * k * np.prod(np.array(c_shape))
         return comp_ops
 
     def _extract_conv3d_params(self, tf_opr):
@@ -433,7 +460,8 @@ class Operator:
         comp_ops = 1
 
         conv_args = self._extract_conv2d_params(tf_opr)
-        comp_ops = 2 * comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
+        #comp_ops = 2 * comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
+        comp_ops = comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
         comp_ops = comp_ops * conv_args['IC'] * conv_args['FH'] * conv_args['FW']
 
         return comp_ops
@@ -442,7 +470,8 @@ class Operator:
         comp_ops = 1
 
         conv_args = self._extract_conv3d_params(tf_opr)
-        comp_ops = 2 * comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
+        #comp_ops = 2 * comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
+        comp_ops = comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
         comp_ops = comp_ops * conv_args['IC'] * conv_args['FH'] * conv_args['FW'] * conv_args['FD']
 
         return comp_ops
@@ -460,7 +489,8 @@ class Operator:
 
     def _cal_comp_fusedbatchnorm(self, tf_opr):
         tmp_list = self.output_tensor_shape[0]
-        comp_ops =  5 * np.prod(np.array(tmp_list))
+        #comp_ops =  5 * np.prod(np.array(tmp_list))
+        comp_ops = np.prod(np.array(tmp_list))
         return comp_ops
 
     def _cal_comp_pooling(self, tf_opr):
@@ -472,7 +502,8 @@ class Operator:
 
     def _cal_comp_softmax(self, tf_opr):
         tmp_list = self.input_tensor_shape[0]
-        return 3 * np.prod(np.array(tmp_list))
+        return np.prod(np.array(tmp_list))
+        #return 3 * np.prod(np.array(tmp_list))
 
     def _cal_comp_addn(self, tf_opr):
         tmp_list = self.input_tensor_shape[0]
@@ -482,6 +513,20 @@ class Operator:
     def _cal_comp_scatter(self, tf_opr):
         tmp_list = self.input_tensor_shape[2]
         return np.prod(np.array(tmp_list))
+
+    def _cal_comp_topk(self, tf_opr):
+        tmp_list = self.input_tensor_shape[0]
+        k = tmp_list[-1]
+        k = max(k, 2.0)
+        comp_ops = np.prod(np.array(tmp_list)) * math.ceil(math.log2(K))
+        return comp_ops
+
+    def _cal_par_topk(self, tf_opr):
+        tmp_list = self.input_tensor_shape[0]
+        k = tmp_list[-1]
+        k = max(k, 2.0)
+        par_ratio = (1.0 / (2 * math.ceil(math.log2(k))))
+        return par_ratio
 
     def _cal_par_matmul(self, tf_opr):
         M, N, K = self._extract_m_n_k()
