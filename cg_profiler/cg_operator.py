@@ -284,7 +284,7 @@ class Operator:
         # We use big-O to measure the computation complexity
         for k in range(len(elementwise_op_set)):
             if self.op_type in elementwise_op_set[k]:
-                return self._cal_comp_elementwise(tf_opr, 1)
+                return self._cal_comp_elementwise(tf_opr, k + 1)
 
         print('op_type: ', self.op_type)
         raise NotImplementedError
@@ -388,8 +388,8 @@ class Operator:
 
     def _cal_comp_matmul(self, tf_opr):
         m, n, k = self._extract_m_n_k()
-        #comp_ops = 2 * m * n * k
-        comp_ops = m * n * k
+        comp_ops = 2 * m * n * k
+        #comp_ops = m * n * k
         return comp_ops
 
     def _cal_comp_batchmatmul(self, tf_opr):
@@ -403,8 +403,8 @@ class Operator:
         k_sqr = k_sqr / np.prod(np.array(c_shape))
         k = math.sqrt(k_sqr)
 
-        #comp_ops = 2 * batch_size * k * np.prod(np.array(c_shape))
-        comp_ops = batch_size * k * np.prod(np.array(c_shape))
+        comp_ops = 2 * batch_size * k * np.prod(np.array(c_shape))
+        #comp_ops = batch_size * k * np.prod(np.array(c_shape))
         return comp_ops
 
     def _extract_conv3d_params(self, tf_opr):
@@ -477,8 +477,8 @@ class Operator:
         comp_ops = 1
 
         conv_args = self._extract_conv2d_params(tf_opr)
-        #comp_ops = 2 * comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
-        comp_ops = comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
+        comp_ops = 2 * comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
+        #comp_ops = comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
         comp_ops = comp_ops * conv_args['IC'] * conv_args['FH'] * conv_args['FW']
 
         return comp_ops
@@ -487,14 +487,15 @@ class Operator:
         comp_ops = 1
 
         conv_args = self._extract_conv3d_params(tf_opr)
-        #comp_ops = 2 * comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
-        comp_ops = comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
+        comp_ops = 2 * comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
+        #comp_ops = comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
         comp_ops = comp_ops * conv_args['IC'] * conv_args['FH'] * conv_args['FW'] * conv_args['FD']
 
         return comp_ops
 
     def _cal_comp_depthwiseconv2d(self, tf_opr):
-        comp_ops = np.prod(np.array(self.output_tensor_shape[0]))
+        #comp_ops = np.prod(np.array(self.output_tensor_shape[0]))
+        comp_ops = 2 * np.prod(np.array(self.output_tensor_shape[0]))
         FH = self.input_tensor_shape[1][0]
         FW = self.input_tensor_shape[1][1]
         return comp_ops * FH * FW
@@ -506,8 +507,8 @@ class Operator:
 
     def _cal_comp_fusedbatchnorm(self, tf_opr):
         tmp_list = self.output_tensor_shape[0]
-        #comp_ops =  5 * np.prod(np.array(tmp_list))
-        comp_ops = np.prod(np.array(tmp_list))
+        comp_ops =  5 * np.prod(np.array(tmp_list))
+        #comp_ops = np.prod(np.array(tmp_list))
         return comp_ops
 
     def _cal_comp_pooling(self, tf_opr):
@@ -519,8 +520,8 @@ class Operator:
 
     def _cal_comp_softmax(self, tf_opr):
         tmp_list = self.input_tensor_shape[0]
-        return np.prod(np.array(tmp_list))
-        #return 3 * np.prod(np.array(tmp_list))
+        #return np.prod(np.array(tmp_list))
+        return 3 * np.prod(np.array(tmp_list))
 
     def _cal_comp_addn(self, tf_opr):
         tmp_list = self.input_tensor_shape[0]

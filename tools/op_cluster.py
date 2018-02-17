@@ -9,6 +9,74 @@ import matplotlib.pyplot as plt
 import pickle
 import numpy as np
 
+class OpPlot:
+    def __init__(self, name='op_type'):
+        self.name = name
+        self.x_list = []
+        self.y_list = []
+        return
+
+    def assign_attr(self, op_attr):
+        self.marker = op_attr['marker']
+        self.color = op_attr['color']
+        if 'area' in op_attr:
+            self.area = op_attr['area']
+        else:
+            self.area = np.pi * (3 ** 2)
+        return
+
+    def assign_set(self, op_set):
+        self.op_set = op_set
+        return
+
+matmul_op = OpPlot('MatMul')
+matmul_op.assign_attr({'marker': 'o', 'color': 'r'})
+matmul_op.assign_set({'MatMul', 'BatchMatMul'})
+
+conv_op = OpPlot('Conv')
+conv_op.assign_attr({'marker': '^', 'color': 'y'})
+conv_op.assign_set({'Conv2D', 'Conv2DBackpropInput', 'Conv3DBackpropInputV2',
+                    'DepthwiseConv2dNative'})
+
+pooling_op = OpPlot('Pooling')
+pooling_op.assign_attr({'marker': 'v', 'color': 'b'})
+pooling_op.assign_set({'MaxPool', 'AvgPool'})
+
+reduce_op = OpPlot('Reduce')
+reduce_op.assign_attr({'marker': 's', 'color': 'c'})
+reduce_op.assign_set({'Sum', 'ArgMin', 'ArgMax', 'Mean', 'All', 'Min', 'Max',
+                      'SoftmaxCrossEntropyWithLogits', 'Softmax',
+                      'SparseSoftmaxCrossEntropyWithLogits', 'AddN'})
+
+elementwise_op = OpPlot('Element-wise')
+elementwise_op.assign_attr({'marker': '+', 'color': 'g'})
+elementwise_op.assign_set({'Mul', 'Sub', 'Cast', 'ConcatV2', 'BiasAdd',
+                          'Sigmoid', 'Tanh', 'Add', 'GreaterEqual',
+                          'LessEqual', 'Switch', 'LogicalNot',
+                          'Greater', 'Where', 'Gather', 'Transpose',
+                          'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
+                          'Select', 'Relu', 'Equal', 'AssignAdd', 'Sign',
+                          'FusedBatchNorm', 'OneHot', 'Less', 'LoopCond',
+                          'NextIteration', 'Minimum', 'Maximum', 'Range',
+                          'Exp', 'Log', 'ReduceJoin', 'HashTableV2',
+                          'LookupTableFindV2', 'StridedSlice', 'Pack',
+                          'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'Fill',
+                          'ResizeBilinear', 'DepthToSpace', 'SpaceToDepth',
+                          'Round', 'Softplus', 'GatherV2', 'Square', 'Rsqrt',
+                          'SquaredDifference', 'RefSwitch', 'Abs', 'Slice',
+                          'ScatterUpdate', 'Concat', 'SparseToDense', 'Div',
+                          'LogicalAnd', 'Tile', 'Relu6', 'CropAndResize',
+                          'FloorMod', 'SpaceToBatchND', 'BatchToSpaceND',
+                          'DynamicStitch', 'ReverseSequence', 'Multinomial',
+                          'FloorDiv', 'TanhGrad', 'SigmoidGrad', 'Reciprocal',
+                          'Lgamma', 'RsqrtGrad'})
+
+others = OpPlot('Others')
+others.assign_attr({'marker': '*', 'color': 'm'})
+others.assign_set({})
+
+op_classes = [matmul_op, conv_op, pooling_op, reduce_op, elementwise_op, others]
+
 def main():
 
     parser = argparse.ArgumentParser(
@@ -26,6 +94,7 @@ def main():
     if args.output_dir is None:
         args.output_dir = os.path.join(os.getenv('LOG_OUTPUT_DIR'), 'outputs')
 
+    # Reading data from log files
     total_op_list = []
     for dirpath, dirnames, filenames in os.walk(args.input_dir):
         for input_file in filenames:
@@ -37,29 +106,40 @@ def main():
     np.random.seed(19680801)
     color_dict = {}
 
-    # Draw scatter figures for regular ops
-    par_list = []
-    locality_list = []
-    color_list = []
     for each_op in total_op_list:
-        if not each_op.is_aid_op and each_op.regular:
+        if not each_op.is_aid_op:
             if each_op.comp_instrs == 0:
                 continue
-            if each_op.op_type not in color_dict:
-                color_dict[each_op.op_type] = np.random.rand()
 
             locality = (each_op.mem_trans / each_op.comp_instrs)
-            if locality > 100:
-                print('op_type: {}'.format(each_op.op_type))
+            if locality > 42:
+                print('op_type: {}, locality: {}'.format(each_op.op_type,
+                                                         locality))
                 continue
 
-            color_list.append(color_dict[each_op.op_type])
-            par_list.append(each_op.parallelism)
-            locality_list.append(each_op.mem_trans / each_op.comp_instrs)
+            found = False
+            for each_op_class in op_classes:
+                if each_op.op_type in each_op_class.op_set and each_op.regular:
+                    found = True
+                    each_op_class.x_list.append(each_op.parallelism)
+                    each_op_class.y_list.append(locality)
+                    break
 
-    plt.scatter(par_list, locality_list, c=color_list)
-    output_fig = os.path.join(args.output_dir, 'op_cluster_reg.pdf')
-    plt.savefig(output_fig, format='pdf')
+            if not found:
+                final_class = op_classes[-1]
+                final_class.x_list.append(each_op.parallelism)
+                final_class.y_list.append(locality)
+
+
+    for each_op_class in op_classes:
+        plt.scatter(each_op_class.x_list, each_op_class.y_list, s=each_op_class.area,
+                    c=each_op_class.color, marker=each_op_class.marker,
+                    label=each_op_class.name, alpha=0.5)
+
+    plt.legend(loc='best')
+
+    output_fig = os.path.join(args.output_dir, 'op_cluster_reg.png')
+    plt.savefig(output_fig, format='png')
 
 if __name__ == '__main__':
     main()
