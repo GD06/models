@@ -305,13 +305,26 @@ class Model(object):
 
       cg_tensor_dict = cg.get_tensors()
       cg_sorted_keys = sorted(cg_tensor_dict.keys())
-      cg_sorted_items = []
-      for cg_key in cg_sorted_keys:
-        cg_sorted_items.append(cg_tensor_dict[cg_key].shape)
+      #cg_sorted_items = []
+      #for cg_key in cg_sorted_keys:
+      #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
       #cg_sorted_shape = sess.run(cg_sorted_items,
       #                           feed_dict={self.x: xx, self.y: yy})
-      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_items)),
+      cg_sorted_shape = []
+      for cg_key in cg_sorted_keys:
+        shape_tensor = tf.shape(cg_tensor_dict[cg_key])
+        try:
+          eval_shape = shape_tensor.eval(session=sess,
+                                        feed_dict={self.x: xx, self.y: yy})
+          cg_sorted_shape.append(eval_shape)
+        except Exception as excep:
+          cg_sorted_shape.append(cg_tensor_dict[cg_key].shape)
+      #for shape_tensor in cg_sorted_items:
+      #    print(shape_tensor.name)
+      #    cg_sorted_shape.append(shape_tensor.eval(session=sess,
+      #          feed_dict={self.x: xx, self.y: yy}))
+      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
                      'learning_to_remember_rare_events.pickle')
 
       exit(0)

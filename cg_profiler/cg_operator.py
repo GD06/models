@@ -60,6 +60,15 @@ class Operator:
         self.parallelism = self._calculate_parallelism(tf_repr)
         self.regular = self._calculate_regular(tf_repr)
 
+        if self.comp_instrs == 0:
+            return
+
+        locality = self.mem_trans / self.comp_instrs
+        if locality > 100:
+            print('Inputs:', self.input_tensor_shape)
+            print('Outputs:', self.output_tensor_shape)
+            raise NotImplementedError
+
         return
 
     def _tolist(self, t_shape):
@@ -119,7 +128,7 @@ class Operator:
         known_op_set = {'Mul', 'Sub', 'Cast', 'ConcatV2', 'MatMul',
                         'BiasAdd', 'Conv2D', 'Sigmoid', 'Tanh', 'Add',
                         'Min', 'GreaterEqual', 'Max', 'LessEqual',
-                        'LogicalNot', 'Greater', 'Gather', 'Sum', 'Transpose',
+                        'LogicalNot', 'Greater', 'Sum', 'Transpose',
                         'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
                         'Relu', 'Equal', 'AssignAdd', 'Sign', 'FusedBatchNorm',
                         'MaxPool', 'AvgPool', 'ArgMin', 'OneHot', 'Less',
@@ -128,7 +137,7 @@ class Operator:
                         'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'AddN',
                         'Fill', 'ResizeBilinear', 'Conv2DBackpropInput',
                         'DepthToSpace', 'SpaceToDepth', 'Mean', 'Round',
-                        'Softplus', 'GatherV2', 'Square', 'Rsqrt',
+                        'Softplus', 'Square', 'Rsqrt',
                         'SquaredDifference', 'Abs', 'BatchMatMul', 'Concat',
                         'SparseToDense', 'Div', 'LogicalAnd', 'Tile', 'Relu6',
                         'DepthwiseConv2dNative', 'CropAndResize', 'FloorMod',
@@ -148,9 +157,9 @@ class Operator:
 
         if (self.op_type == 'Switch' or self.op_type == 'Select'
                 or self.op_type == 'RefSwitch'):
-            return self._cal_mem_switch()
+            return self._cal_mem_switch(tf_opr)
         if self.op_type == 'Where':
-            return self._cal_mem_where()
+            return self._cal_mem_where(tf_opr)
 
         if self.op_type == 'FusedBatchNormGrad':
             return self._cal_mem_fusedbatchnormgrad(tf_opr)
@@ -159,29 +168,30 @@ class Operator:
                 self.op_type == 'LookupTableFindV2' or
                 self.op_type == 'StridedSlice' or
                 self.op_type == 'Slice' or
-                self.op_type == 'DynamicStitch'):
+                self.op_type == 'DynamicStitch' or
+                self.op_type == 'Gather' or
+                self.op_type == 'GatherV2'):
             return self._cal_mem_tableindex(tf_opr)
 
         if self.op_type in scatter_op_set:
             return self._cal_mem_scatter(tf_opr)
 
         if self.op_type in softmax_op_set:
-            return self._cal_mem_softmax()
+            return self._cal_mem_softmax(tf_opr)
 
         if self.op_type in known_op_set:
             total_mem_trans = 0
-
             for input_tensor, input_tensor_shape in zip(
                     tf_opr.inputs, self.input_tensor_shape):
-
-                tmp_list = [input_tensor.dtype.size] + input_tensor_shape
-                total_mem_trans += np.prod(np.array(tmp_list))
+                k = input_tensor.dtype.size
+                tmp_list = input_tensor_shape
+                total_mem_trans += k * np.prod(np.array(tmp_list))
 
             for output_tensor, output_tensor_shape in zip(
                     tf_opr.outputs, self.output_tensor_shape):
-
-                tmp_list = [output_tensor.dtype.size] + output_tensor_shape
-                total_mem_trans += np.prod(np.array(tmp_list))
+                k = output_tensor.dtype.size
+                tmp_list = output_tensor_shape
+                total_mem_trans += k * np.prod(np.array(tmp_list))
 
             return total_mem_trans
 
@@ -194,8 +204,8 @@ class Operator:
 
         # 1-type elementwise operator
         elementwise_op_set.append({'Mul', 'Sub', 'Cast', 'ConcatV2', 'BiasAdd',
-                                'Sigmoid', 'Tanh', 'Add', 'Min', 'GreaterEqual',
-                                'Max', 'LessEqual', 'Switch', 'LogicalNot',
+                                'Sigmoid', 'Tanh', 'Add', 'GreaterEqual',
+                                'LessEqual', 'Switch', 'LogicalNot',
                                 'Greater', 'Where', 'Gather', 'Transpose',
                                 'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
                                 'Select', 'Relu', 'Equal', 'AssignAdd', 'Sign',
@@ -208,9 +218,9 @@ class Operator:
                                 'Abs', 'Slice', 'Concat', 'SparseToDense', 'Div',
                                 'LogicalAnd', 'Tile', 'CropAndResize', 'FloorMod',
                                 'SpaceToBatchND', 'BatchToSpaceND', 'DynamicStitch',
-                                'ReverseSequence', 'Multinomial', 'SparseTensorDenseAdd',
-                                'FloorDiv', 'TanhGrad', 'SigmoidGrad', 'Reciprocal',
-                                'Lgamma', 'RsqrtGrad'})
+                                'ReverseSequence', 'Multinomial', 'FloorDiv',
+                                'TanhGrad', 'SigmoidGrad', 'Reciprocal', 'Lgamma',
+                                'RsqrtGrad'})
 
         # 2-type elementwise operator
         elementwise_op_set.append({'Relu6'})
@@ -219,7 +229,7 @@ class Operator:
         elementwise_op_set.append({'SquaredDifference', 'Softplus'})
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'ReduceJoin', 'Mean',
-                         'All'}
+                         'All', 'Max', 'Min'}
 
         pooling_op_set = {'MaxPool', 'AvgPool'}
 
@@ -230,6 +240,9 @@ class Operator:
 
         if self.is_aid_op:
             return 0
+
+        if self.op_type == 'SparseTensorDenseAdd':
+            return self._cal_comp_sparsetensordenseadd(tf_opr)
 
         if self.op_type == 'MatMul':
             return self._cal_comp_matmul(tf_opr)
@@ -279,8 +292,8 @@ class Operator:
     def _calculate_parallelism(self, tf_opr):
 
         elementwise_op_set = {'Mul', 'Sub', 'Cast', 'ConcatV2', 'BiasAdd',
-                              'Sigmoid', 'Tanh', 'Add', 'Min', 'GreaterEqual',
-                              'Max', 'LessEqual', 'Switch', 'LogicalNot',
+                              'Sigmoid', 'Tanh', 'Add', 'GreaterEqual',
+                              'LessEqual', 'Switch', 'LogicalNot',
                               'Greater', 'Where', 'Gather', 'Transpose',
                               'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
                               'Select', 'Relu', 'Equal', 'AssignAdd', 'Sign',
@@ -296,10 +309,10 @@ class Operator:
                               'LogicalAnd', 'Tile', 'Relu6', 'CropAndResize',
                               'FloorMod', 'SpaceToBatchND', 'BatchToSpaceND',
                               'DynamicStitch', 'ReverseSequence', 'Multinomial',
-                              'SparseTensorDenseAdd', 'FloorDiv', 'TanhGrad',
-                              'SigmoidGrad', 'Reciprocal', 'Lgamma', 'RsqrtGrad'}
+                              'FloorDiv', 'TanhGrad', 'SigmoidGrad', 'Reciprocal',
+                              'Lgamma', 'RsqrtGrad'}
 
-        reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean', 'All'}
+        reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean', 'All', 'Min', 'Max'}
 
         pooling_op_set = {'MaxPool', 'AvgPool'}
 
@@ -308,6 +321,9 @@ class Operator:
 
         if self.is_aid_op:
             return 0.0
+
+        if self.op_type == 'SparseTensorDenseAdd':
+            return self._cal_par_sparsetensordenseadd(tf_opr)
 
         if self.op_type == 'MatMul':
             return self._cal_par_matmul(tf_opr)
@@ -349,8 +365,9 @@ class Operator:
 
 
     def _cal_comp_elementwise(self, tf_opr, k):
-        tmp_list = self.output_tensor_shape[0]
-        comp_ops = k * np.prod(np.array(tmp_list))
+        comp_ops = 0
+        for output_shape in self.output_tensor_shape:
+            comp_ops += k * np.prod(np.array(output_shape))
         return comp_ops
 
     def _extract_m_n_k(self):
@@ -518,14 +535,26 @@ class Operator:
         tmp_list = self.input_tensor_shape[0]
         k = tmp_list[-1]
         k = max(k, 2.0)
-        comp_ops = np.prod(np.array(tmp_list)) * math.ceil(math.log2(K))
+        comp_ops = np.prod(np.array(tmp_list)) * math.ceil(math.log2(k))
         return comp_ops
+
+    def _cal_comp_sparsetensordenseadd(self, tf_opr):
+        comp_ops_a = np.prod(np.array(self.input_tensor_shape[1]))
+        comp_ops_b = np.prod(np.array(self.output_tensor_shape[0]))
+        comp_ops = max(comp_ops_a, comp_ops_b)
+        return comp_ops
+
+    def _cal_par_sparsetensordenseadd(self, tf_opr):
+        comp_ops_a = np.prod(np.array(self.input_tensor_shape[1]))
+        comp_ops_b = np.prod(np.array(self.output_tensor_shape[0]))
+        k = max(comp_ops_a / comp_ops_b, 2.0)
+        par_ratio = (1.0 / math.ceil(math.log2(k)))
 
     def _cal_par_topk(self, tf_opr):
         tmp_list = self.input_tensor_shape[0]
         k = tmp_list[-1]
         k = max(k, 2.0)
-        par_ratio = (1.0 / (2 * math.ceil(math.log2(k))))
+        par_ratio = (1.0 / (math.ceil(math.log2(k))))
         return par_ratio
 
     def _cal_par_matmul(self, tf_opr):
@@ -597,26 +626,31 @@ class Operator:
         par_ratio = (1.0 / math.ceil(math.log2(K)))
         return par_ratio
 
-    def _cal_mem_switch(self):
+    def _cal_mem_switch(self, tf_opr):
+        k = tf_opr.inputs[0].dtype.size
         tmp_list = self.input_tensor_shape[0]
-        return 2 * np.prod(np.array(tmp_list))
+        return 2 * k * np.prod(np.array(tmp_list))
 
-    def _cal_mem_where(self):
+    def _cal_mem_where(self, tf_opr):
+        k = tf_opr.outputs[0].dtype.size
         tmp_list = self.output_tensor_shape[0]
-        return 3 * np.prod(np.array(tmp_list))
+        return 3 * k * np.prod(np.array(tmp_list))
 
-    def _cal_mem_softmax(self):
+    def _cal_mem_softmax(self, tf_opr):
+        k = tf_opr.inputs[0].dtype.size
         tmp_list = self.input_tensor_shape[0]
-        return 2 * np.prod(np.array(tmp_list))
+        return 2 * k * np.prod(np.array(tmp_list))
 
     def _cal_mem_tableindex(self, tf_opr):
+        k = tf_opr.outputs[0].dtype.size
         tmp_list = self.output_tensor_shape[0]
-        return 2 * np.prod(np.array(tmp_list))
+        return 2 * k * np.prod(np.array(tmp_list))
 
     def _cal_mem_scatter(self, tf_opr):
+        k = tf_opr.inputs[2].dtype.size
         tmp_list = self.input_tensor_shape[2]
         index_list = self.input_tensor_shape[1]
-        mem_trans = (np.prod(np.array(index_list)) +
-                     2 * np.prod(np.array(tmp_list)))
+        mem_trans = (4 * np.prod(np.array(index_list)) +
+                     2 * k * np.prod(np.array(tmp_list)))
         return mem_trans
 
