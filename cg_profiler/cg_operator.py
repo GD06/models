@@ -91,7 +91,7 @@ class Operator:
                       'RandomUniform', 'DecodeJpeg', 'Variable', 'Rank',
                       'Unique', 'Assign', 'RandomShuffle', 'ParseExample',
                       'ReaderReadV2', 'WholeFileReaderV2', 'L2Loss', 'ApplyAdam',
-                      'BroadcastGradientArgs', 'ConcatOffset'}
+                      'BroadcastGradientArgs', 'ConcatOffset', 'Multinomial'}
         # How to deal with sort operators
 
         if self.keyword_filter is not None:
@@ -142,7 +142,7 @@ class Operator:
                         'SparseToDense', 'Div', 'LogicalAnd', 'Tile', 'Relu6',
                         'DepthwiseConv2dNative', 'CropAndResize', 'FloorMod',
                         'SpaceToBatchND', 'BatchToSpaceND', 'ReverseSequence',
-                        'All', 'Multinomial', 'SparseTensorDenseAdd',
+                        'All', 'SparseTensorDenseAdd',
                         'Conv3DBackpropInputV2', 'FloorDiv', 'TanhGrad',
                         'SigmoidGrad', 'Reciprocal', 'Lgamma', 'RsqrtGrad',
                         'TopKV2'}
@@ -218,15 +218,15 @@ class Operator:
                                 'Abs', 'Slice', 'Concat', 'SparseToDense', 'Div',
                                 'LogicalAnd', 'Tile', 'CropAndResize', 'FloorMod',
                                 'SpaceToBatchND', 'BatchToSpaceND', 'DynamicStitch',
-                                'ReverseSequence', 'Multinomial', 'FloorDiv',
+                                'ReverseSequence', 'FloorDiv',
                                 'TanhGrad', 'SigmoidGrad', 'Reciprocal', 'Lgamma',
-                                'RsqrtGrad'})
+                                'RsqrtGrad', 'Relu6', 'Softplus'})
 
         # 2-type elementwise operator
-        elementwise_op_set.append({'Relu6'})
+        elementwise_op_set.append({})
 
         # 3-type elementwise operator
-        elementwise_op_set.append({'SquaredDifference', 'Softplus'})
+        elementwise_op_set.append({'SquaredDifference'})
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'ReduceJoin', 'Mean',
                          'All', 'Max', 'Min'}
@@ -308,7 +308,7 @@ class Operator:
                               'ScatterUpdate', 'Concat', 'SparseToDense', 'Div',
                               'LogicalAnd', 'Tile', 'Relu6', 'CropAndResize',
                               'FloorMod', 'SpaceToBatchND', 'BatchToSpaceND',
-                              'DynamicStitch', 'ReverseSequence', 'Multinomial',
+                              'DynamicStitch', 'ReverseSequence',
                               'FloorDiv', 'TanhGrad', 'SigmoidGrad', 'Reciprocal',
                               'Lgamma', 'RsqrtGrad'}
 
