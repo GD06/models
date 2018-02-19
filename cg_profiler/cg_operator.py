@@ -65,8 +65,11 @@ class Operator:
 
         locality = self.mem_trans / self.comp_instrs
         if locality > 100:
+            print('mem_trans: {}, comp_instrs: {}'.format(self.mem_trans,
+                                                          self.comp_instrs))
             print('Inputs:', self.input_tensor_shape)
             print('Outputs:', self.output_tensor_shape)
+            print('op_type:', self.op_type)
             raise NotImplementedError
 
         return
