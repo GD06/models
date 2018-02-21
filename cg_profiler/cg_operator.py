@@ -553,6 +553,7 @@ class Operator:
         comp_ops_b = np.prod(np.array(self.output_tensor_shape[0]))
         k = max(comp_ops_a / comp_ops_b, 2.0)
         par_ratio = (1.0 / math.ceil(math.log2(k)))
+        return par_ratio
 
     def _cal_par_topk(self, tf_opr):
         tmp_list = self.input_tensor_shape[0]
