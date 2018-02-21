@@ -140,12 +140,12 @@ class Operator:
                         'Pack', 'Pad', 'Neg', 'Sin', 'Cos', 'Floor', 'AddN',
                         'Fill', 'ResizeBilinear', 'Conv2DBackpropInput',
                         'DepthToSpace', 'SpaceToDepth', 'Mean', 'Round',
-                        'Softplus', 'Square', 'Rsqrt',
+                        'Softplus', 'Square', 'Rsqrt', 'LinSpace',
                         'SquaredDifference', 'Abs', 'BatchMatMul', 'Concat',
                         'SparseToDense', 'Div', 'LogicalAnd', 'Tile', 'Relu6',
                         'DepthwiseConv2dNative', 'CropAndResize', 'FloorMod',
                         'SpaceToBatchND', 'BatchToSpaceND', 'ReverseSequence',
-                        'All', 'SparseTensorDenseAdd',
+                        'All', 'SparseTensorDenseAdd', 'LogicalOr',
                         'Conv3DBackpropInputV2', 'FloorDiv', 'TanhGrad',
                         'SigmoidGrad', 'Reciprocal', 'Lgamma', 'RsqrtGrad',
                         'TopKV2'}
@@ -208,7 +208,7 @@ class Operator:
         # 1-type elementwise operator
         elementwise_op_set.append({'Mul', 'Sub', 'Cast', 'ConcatV2', 'BiasAdd',
                                 'Sigmoid', 'Tanh', 'Add', 'GreaterEqual',
-                                'LessEqual', 'Switch', 'LogicalNot',
+                                'LessEqual', 'Switch', 'LogicalNot', 'LinSpace',
                                 'Greater', 'Where', 'Gather', 'Transpose',
                                 'Pow', 'Sqrt', 'RealDiv', 'Unpack', 'Split',
                                 'Select', 'Relu', 'Equal', 'AssignAdd', 'Sign',
@@ -221,7 +221,7 @@ class Operator:
                                 'Abs', 'Slice', 'Concat', 'SparseToDense', 'Div',
                                 'LogicalAnd', 'Tile', 'CropAndResize', 'FloorMod',
                                 'SpaceToBatchND', 'BatchToSpaceND', 'DynamicStitch',
-                                'ReverseSequence', 'FloorDiv',
+                                'ReverseSequence', 'FloorDiv', 'LogicalOr',
                                 'TanhGrad', 'SigmoidGrad', 'Reciprocal', 'Lgamma',
                                 'RsqrtGrad', 'Relu6', 'Softplus'})
 
@@ -311,9 +311,9 @@ class Operator:
                               'ScatterUpdate', 'Concat', 'SparseToDense', 'Div',
                               'LogicalAnd', 'Tile', 'Relu6', 'CropAndResize',
                               'FloorMod', 'SpaceToBatchND', 'BatchToSpaceND',
-                              'DynamicStitch', 'ReverseSequence',
+                              'DynamicStitch', 'ReverseSequence', 'LogicalOr',
                               'FloorDiv', 'TanhGrad', 'SigmoidGrad', 'Reciprocal',
-                              'Lgamma', 'RsqrtGrad'}
+                              'Lgamma', 'RsqrtGrad', 'LinSpace'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean', 'All', 'Min', 'Max'}
 
