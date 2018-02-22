@@ -5,6 +5,7 @@ import os
 import argparse
 import pickle
 import math
+import numpy as np
 
 def distance(list1, list2):
     assert len(list1) == len(list2)
@@ -23,6 +24,8 @@ def main():
     parser.add_argument('init_centers', help="specify the file of initial centers")
     parser.add_argument('--output_centers', default="op_centers.txt",
                         help="a path to save output centers")
+    parser.add_argument('--max_locality', default="max_locality.txt",
+                        help="a path to save max_locality")
     parser.add_argument('--suffix', default="pickle", help="specify the suffix of "
                         "result files")
     parser.add_argument('--threshold', default=0.01, type=float,
@@ -69,6 +72,10 @@ def main():
             data_points.append([each_op.parallelism, locality])
 
     print('Max locality: {}'.format(max_locality))
+    with open(args.max_locality, 'w') as f:
+        f.write(str(max_locality))
+        f.write('\n')
+
     for i in range(len(data_points)):
         data_points[i][1] = data_points[i][1] / max_locality
 
@@ -84,14 +91,9 @@ def main():
             new_count.append(0.0)
 
         for point in data_points:
-            cluster_id = 0
-            min_dis = 3.0
 
-            for i in range(len(initial_centers)):
-                curr_dis = distance(initial_centers[i], point)
-                if curr_dis < min_dis:
-                    min_dis = curr_dis
-                    min_i = i
+            dis_array = [distance(point, c) for c in initial_centers]
+            min_i = np.argmin(dis_array)
 
             new_centers[min_i][0] += point[0]
             new_centers[min_i][1] += point[1]
