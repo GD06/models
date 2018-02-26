@@ -136,9 +136,14 @@ def main():
                     c=each_op_class.color, marker=each_op_class.marker,
                     label=each_op_class.name, alpha=0.5)
 
-    plt.legend(loc='best')
+    plt.legend(loc='upper center')
 
-    output_fig = os.path.join(args.output_dir, 'op_cluster_reg.png')
+    #plt.xlim(0, 1.0)
+    #plt.ylim(0, 26.0)
+    plt.xlabel('Parallelism')
+    plt.ylabel('Locality')
+
+    output_fig = os.path.join(args.output_dir, 'op_scatter.png')
     plt.savefig(output_fig, format='png')
 
 if __name__ == '__main__':
