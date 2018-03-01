@@ -55,7 +55,7 @@ class CompGraph:
 
         return tensor_dict
 
-    def op_analysis(self, shape_dict, filename):
+    def op_analysis(self, shape_dict, filename, *, dir_name='log'):
 
         not_impl = {}
 
@@ -70,10 +70,10 @@ class CompGraph:
             raise NotImplementedError
 
         if os.getenv('LOG_OUTPUT_DIR') is not None:
-            full_filename = os.path.join(os.getenv('LOG_OUTPUT_DIR'), 'log',
+            full_filename = os.path.join(os.getenv('LOG_OUTPUT_DIR'), dir_name,
                                          filename)
         else:
-            full_filename = os.path.join(os.getenv('HOME'), 'log',
+            full_filename = os.path.join(os.getenv('HOME'), dir_name,
                                          filename)
 
         with open(full_filename, 'wb') as f:
