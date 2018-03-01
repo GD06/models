@@ -6,6 +6,7 @@ import argparse
 import pickle
 import math
 import numpy as np
+import copy
 
 def distance(list1, list2):
     assert len(list1) == len(list2)
@@ -139,7 +140,8 @@ def main():
 
     result_list = []
     iter_num = 0
-    result_list.append([iter_num, 0.0, app_label])
+    tmp_app_label = copy.deepcopy(app_label)
+    result_list.append([iter_num, 0.0, tmp_app_label])
     while len(label_center) > 1:
         iter_num += 1
 
@@ -155,7 +157,8 @@ def main():
         label_center = update_label_center(app_dict, app_label)
 
         cohesion = comp_cohesion(app_dict, app_label, label_center)
-        result_list.append([iter_num, cohesion, app_label])
+        tmp_app_label = copy.deepcopy(app_label)
+        result_list.append([iter_num, cohesion, tmp_app_label])
         print('Iteration: {}, Cohesion: {}'.format(iter_num, cohesion))
 
     if args.output_dir is None:
