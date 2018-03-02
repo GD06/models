@@ -94,7 +94,8 @@ class Operator:
                       'RandomUniform', 'DecodeJpeg', 'Variable', 'Rank',
                       'Unique', 'Assign', 'RandomShuffle', 'ParseExample',
                       'ReaderReadV2', 'WholeFileReaderV2', 'L2Loss', 'ApplyAdam',
-                      'BroadcastGradientArgs', 'ConcatOffset', 'Multinomial'}
+                      'BroadcastGradientArgs', 'ConcatOffset', 'Multinomial',
+                      'LogUniformCandidateSampler', 'ComputeAccidentalHits'}
         # How to deal with sort operators
 
         if self.keyword_filter is not None:
@@ -148,7 +149,7 @@ class Operator:
                         'All', 'SparseTensorDenseAdd', 'LogicalOr',
                         'Conv3DBackpropInputV2', 'FloorDiv', 'TanhGrad',
                         'SigmoidGrad', 'Reciprocal', 'Lgamma', 'RsqrtGrad',
-                        'TopKV2'}
+                        'TopKV2', 'LRN', 'ZerosLike'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
                           'SparseSoftmaxCrossEntropyWithLogits'}
@@ -223,7 +224,7 @@ class Operator:
                                 'SpaceToBatchND', 'BatchToSpaceND', 'DynamicStitch',
                                 'ReverseSequence', 'FloorDiv', 'LogicalOr',
                                 'TanhGrad', 'SigmoidGrad', 'Reciprocal', 'Lgamma',
-                                'RsqrtGrad', 'Relu6', 'Softplus'})
+                                'RsqrtGrad', 'Relu6', 'Softplus', 'ZerosLike'})
 
         # 2-type elementwise operator
         elementwise_op_set.append({})
@@ -272,6 +273,9 @@ class Operator:
         if self.op_type == 'TopKV2':
             return self._cal_comp_topk(tf_opr)
 
+        if self.op_type == 'LRN':
+            return self._cal_comp_lrn(tf_opr)
+
         if self.op_type in scatter_op_set:
             return self._cal_comp_scatter(tf_opr)
 
@@ -313,7 +317,7 @@ class Operator:
                               'FloorMod', 'SpaceToBatchND', 'BatchToSpaceND',
                               'DynamicStitch', 'ReverseSequence', 'LogicalOr',
                               'FloorDiv', 'TanhGrad', 'SigmoidGrad', 'Reciprocal',
-                              'Lgamma', 'RsqrtGrad', 'LinSpace'}
+                              'Lgamma', 'RsqrtGrad', 'LinSpace', 'ZerosLike'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean', 'All', 'Min', 'Max'}
 
@@ -349,6 +353,9 @@ class Operator:
 
         if self.op_type == 'TopKV2':
             return self._cal_par_topk(tf_opr)
+
+        if self.op_type == 'LRN':
+            return self._cal_par_lrn(tf_opr)
 
         if self.op_type in softmax_op_set:
             return self._cal_par_softmax(tf_opr)
@@ -521,6 +528,12 @@ class Operator:
         comp_ops = comp_ops * np.prod(np.array(ksize))
         return comp_ops
 
+    def _cal_comp_lrn(self, tf_opr):
+        r = tf_opr.get_attr('depth_radius')
+        tmp_list = self.output_tensor_shape[0]
+        comp_ops = (4 * r + 6) * np.prod(np.array(tmp_list))
+        return comp_ops
+
     def _cal_comp_softmax(self, tf_opr):
         tmp_list = self.input_tensor_shape[0]
         #return np.prod(np.array(tmp_list))
@@ -620,6 +633,12 @@ class Operator:
         K = max(np.prod(np.array(ksize)), 2.0)
         par_ratio = (1.0 / math.ceil(math.log2(K)))
         return par_ratio
+
+    def _cal_par_lrn(self, tf_opr):
+        r = tf_opr.get_attr('depth_radius')
+        K = max(2 * r + 1, 2.0)
+        return ((2 * r + 5 + (2 * r + 1) * (1 / math.ceil(math.log2(K))))
+                / (4 * r + 6))
 
     def _cal_par_softmax(self, tf_opr):
         K = max(2.0, self.input_tensor_shape[0][1])
