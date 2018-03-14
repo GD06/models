@@ -21,6 +21,7 @@ from __future__ import print_function
 
 
 import tensorflow as tf
+import sys
 
 import data_provider
 import networks
@@ -92,18 +93,24 @@ def main(_, run_eval_loop=True):
 
       options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
       run_metadata = tf.RunMetadata()
+
+      print('Model gan_mnist start running')
+      sys.stdout.flush()
       sess.run(images, options=options, run_metadata=run_metadata)
-      cg = CompGraph('gan_mnist', run_metadata, tf.get_default_graph())
+      print('Model gan_mnist stop')
+      sys.stdout.flush()
 
-      cg_tensor_dict = cg.get_tensors()
-      cg_sorted_keys = sorted(cg_tensor_dict.keys())
-      cg_sorted_items = []
-      for cg_key in cg_sorted_keys:
-        cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+      #cg = CompGraph('gan_mnist', run_metadata, tf.get_default_graph())
 
-      cg_sorted_shape = sess.run(cg_sorted_items)
-      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                     'gan_mnist.pickle')
+      #cg_tensor_dict = cg.get_tensors()
+      #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+      #cg_sorted_items = []
+      #for cg_key in cg_sorted_keys:
+      #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+      #cg_sorted_shape = sess.run(cg_sorted_items)
+      #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+      #               'gan_mnist.pickle')
 
       exit(0)
     #tf.summary.scalar('MNIST_Frechet_distance',

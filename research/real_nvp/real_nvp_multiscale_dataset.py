@@ -26,6 +26,7 @@ $ python real_nvp_multiscale_dataset.py \
 import time
 from datetime import datetime
 import os
+import sys
 
 from cg_profiler.cg_graph import CompGraph
 
@@ -1443,19 +1444,23 @@ class RealNVP(object):
             options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
             run_metadata = tf.RunMetadata()
 
+            print('Model real_nvp start running')
+            sys.stdout.flush()
             cost = sess.run(self.bit_per_dim, options=options,
                             run_metadata=run_metadata)
-            cg = CompGraph('real_nvp', run_metadata, tf.get_default_graph())
+            print('Model real_nvp stop')
+            sys.stdout.flush()
+            #cg = CompGraph('real_nvp', run_metadata, tf.get_default_graph())
 
-            cg_tensor_dict = cg.get_tensors()
-            cg_sorted_keys = sorted(cg_tensor_dict.keys())
-            cg_sorted_items = []
-            for cg_key in cg_sorted_keys:
-              cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+            #cg_tensor_dict = cg.get_tensors()
+            #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+            #cg_sorted_items = []
+            #for cg_key in cg_sorted_keys:
+            #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-            cg_sorted_shape = sess.run(cg_sorted_items)
-            cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                           'real_nvp.pickle')
+            #cg_sorted_shape = sess.run(cg_sorted_items)
+            #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+            #               'real_nvp.pickle')
 
             exit(0)
             #cost = self.bit_per_dim.eval()

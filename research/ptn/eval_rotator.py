@@ -19,6 +19,7 @@
 
 
 import os
+import sys
 from cg_profiler.cg_graph import CompGraph
 
 import tensorflow as tf
@@ -141,19 +142,23 @@ def main(argv=()):
       options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
       run_metadata = tf.RunMetadata()
 
+      print('Model ptn_rotator start running')
+      sys.stdout.flush()
       sess.run(list(names_to_updates.values()), options=options,
                run_metadata=run_metadata)
-      cg = CompGraph('ptn_rotator', run_metadata, tf.get_default_graph())
+      print('Model ptn_rotator stop')
+      sys.stdout.flush()
+      #cg = CompGraph('ptn_rotator', run_metadata, tf.get_default_graph())
 
-      cg_tensor_dict = cg.get_tensors()
-      cg_sorted_keys = sorted(cg_tensor_dict.keys())
-      cg_sorted_items = []
-      for cg_key in cg_sorted_keys:
-        cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+      #cg_tensor_dict = cg.get_tensors()
+      #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+      #cg_sorted_items = []
+      #for cg_key in cg_sorted_keys:
+      #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-      cg_sorted_shape = sess.run(cg_sorted_items)
-      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                     'ptn_rotator.pickle')
+      #cg_sorted_shape = sess.run(cg_sorted_items)
+      #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+      #               'ptn_rotator.pickle')
       exit(0)
     #slim.evaluation.evaluation_loop(
     #    master=FLAGS.master,

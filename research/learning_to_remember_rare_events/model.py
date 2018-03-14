@@ -25,6 +25,7 @@ import tensorflow as tf
 import memory
 
 from cg_profiler.cg_graph import CompGraph
+import sys
 
 FLAGS = tf.flags.FLAGS
 
@@ -299,33 +300,37 @@ class Model(object):
       options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
       run_metadata = tf.RunMetadata()
 
+      print('Model learning_to_remember_rare_events start running')
+      sys.stdout.flush()
       out = sess.run(outputs, feed_dict={self.x: xx, self.y: yy},
                      options=options, run_metadata=run_metadata)
-      cg = CompGraph('learning_to_remember_rare_events', run_metadata, tf.get_default_graph())
+      print('Model learning_to_remember_rare_events stop')
+      sys.stdout.flush()
+      #cg = CompGraph('learning_to_remember_rare_events', run_metadata, tf.get_default_graph())
 
-      cg_tensor_dict = cg.get_tensors()
-      cg_sorted_keys = sorted(cg_tensor_dict.keys())
+      #cg_tensor_dict = cg.get_tensors()
+      #cg_sorted_keys = sorted(cg_tensor_dict.keys())
       #cg_sorted_items = []
       #for cg_key in cg_sorted_keys:
       #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
       #cg_sorted_shape = sess.run(cg_sorted_items,
       #                           feed_dict={self.x: xx, self.y: yy})
-      cg_sorted_shape = []
-      for cg_key in cg_sorted_keys:
-        shape_tensor = tf.shape(cg_tensor_dict[cg_key])
-        try:
-          eval_shape = shape_tensor.eval(session=sess,
-                                        feed_dict={self.x: xx, self.y: yy})
-          cg_sorted_shape.append(eval_shape)
-        except Exception as excep:
-          cg_sorted_shape.append(cg_tensor_dict[cg_key].shape)
+      #cg_sorted_shape = []
+      #for cg_key in cg_sorted_keys:
+      #  shape_tensor = tf.shape(cg_tensor_dict[cg_key])
+      #  try:
+      #    eval_shape = shape_tensor.eval(session=sess,
+      #                                  feed_dict={self.x: xx, self.y: yy})
+      #    cg_sorted_shape.append(eval_shape)
+      #  except Exception as excep:
+      #    cg_sorted_shape.append(cg_tensor_dict[cg_key].shape)
       #for shape_tensor in cg_sorted_items:
       #    print(shape_tensor.name)
       #    cg_sorted_shape.append(shape_tensor.eval(session=sess,
       #          feed_dict={self.x: xx, self.y: yy}))
-      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                     'learning_to_remember_rare_events.pickle')
+      #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+      #               'learning_to_remember_rare_events.pickle')
 
       exit(0)
 

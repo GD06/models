@@ -25,6 +25,7 @@ ops, including gradient ops, trust region ops, and value optimizers.
 
 
 import tensorflow as tf
+import sys
 FLAGS = tf.flags.FLAGS
 from cg_profiler.cg_graph import CompGraph
 
@@ -252,19 +253,23 @@ class Model(object):
     options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
     run_metadata = tf.RunMetadata()
 
+    print('Model {} start running'.format(FLAGS.model_name))
+    sys.stdout.flush()
     results = sess.run(outputs, feed_dict=feed_dict, options=options,
                        run_metadata=run_metadata)
-    cg = CompGraph(FLAGS.model_name, run_metadata, tf.get_default_graph())
+    print('Model {} stop'.format(FLAGS.model_name))
+    sys.stdout.flush()
+    #cg = CompGraph(FLAGS.model_name, run_metadata, tf.get_default_graph())
 
-    cg_tensor_dict = cg.get_tensors()
-    cg_sorted_keys = sorted(cg_tensor_dict.keys())
-    cg_sorted_items = []
-    for cg_key in cg_sorted_keys:
-      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+    #cg_tensor_dict = cg.get_tensors()
+    #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    #cg_sorted_items = []
+    #for cg_key in cg_sorted_keys:
+    #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-    cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
-    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                   '{}.pickle'.format(FLAGS.model_name))
+    #cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
+    #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+    #               '{}.pickle'.format(FLAGS.model_name))
 
     exit(0)
 

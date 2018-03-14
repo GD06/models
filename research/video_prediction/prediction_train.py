@@ -25,6 +25,7 @@ from prediction_input import build_tfrecord_input
 from prediction_model import construct_model
 
 from cg_profiler.cg_graph import CompGraph
+import sys
 
 # How often to record tensorboard summaries.
 SUMMARY_INTERVAL = 40
@@ -238,19 +239,23 @@ def main(unused_argv):
       run_metadata = tf.RunMetadata()
       model_name = 'video_prediction_{}'.format(FLAGS.model.lower())
 
+      print('Model {} start running'.format(model_name))
+      sys.stdout.flush()
       eval_loss = sess.run(val_model.loss, feed_dict=feed_dict, options=options,
                            run_metadata=run_metadata)
-      cg = CompGraph(model_name, run_metadata, tf.get_default_graph())
+      print('Model {} stop'.format(model_name))
+      sys.stdout.flush()
+      #cg = CompGraph(model_name, run_metadata, tf.get_default_graph())
 
-      cg_tensor_dict = cg.get_tensors()
-      cg_sorted_keys = sorted(cg_tensor_dict.keys())
-      cg_sorted_items = []
-      for cg_key in cg_sorted_keys:
-        cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+      #cg_tensor_dict = cg.get_tensors()
+      #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+      #cg_sorted_items = []
+      #for cg_key in cg_sorted_keys:
+      #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-      cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
-      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                     '{}.pickle'.format(model_name))
+      #cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
+      #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+      #               '{}.pickle'.format(model_name))
 
       #_, val_summary_str = sess.run([val_model.train_op, val_model.summ_op],
       #                               feed_dict)

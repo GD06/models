@@ -209,19 +209,23 @@ def Eval(mnist_data_file, network_parameters, num_testing_images,
       options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
       run_metadata = tf.RunMetadata()
 
+      print('Model differential_privacy_sgd start running')
+      sys.stdout.flush()
       predictions, label_values = sess.run([softmax, labels], options=options,
                                            run_metadata=run_metadata)
-      cg = CompGraph('differential_privacy_sgd', run_metadata, tf.get_default_graph())
+      print('Model differential_privacy_sgd stop')
+      sys.stdout.flush()
+      #cg = CompGraph('differential_privacy_sgd', run_metadata, tf.get_default_graph())
 
-      cg_tensor_dict = cg.get_tensors()
-      cg_sorted_keys = sorted(cg_tensor_dict.keys())
-      cg_sorted_items = []
-      for cg_key in cg_sorted_keys:
-        cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+      #cg_tensor_dict = cg.get_tensors()
+      #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+      #cg_sorted_items = []
+      #for cg_key in cg_sorted_keys:
+      #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-      cg_sorted_shape = sess.run(cg_sorted_items)
-      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                     'differential_privacy_sgd.pickle')
+      #cg_sorted_shape = sess.run(cg_sorted_items)
+      #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+      #               'differential_privacy_sgd.pickle')
 
       exit(0)
 

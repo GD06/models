@@ -41,6 +41,7 @@ import vggish_slim
 
 from cg_profiler.cg_graph import CompGraph
 import os
+import sys
 
 print('\nTesting your install of VGGish\n')
 
@@ -84,22 +85,26 @@ with tf.Graph().as_default(), tf.Session() as sess:
   options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
   run_metadata = tf.RunMetadata()
 
+  print('Model audioset start running')
+  sys.stdout.flush()
   [embedding_batch] = sess.run([embedding_tensor],
                                feed_dict={features_tensor: input_batch},
                                options=options,
                                run_metadata=run_metadata)
-  cg = CompGraph('audioset', run_metadata, tf.get_default_graph())
+  print('Model audioset stop')
+  sys.stdout.flush()
+  #cg = CompGraph('audioset', run_metadata, tf.get_default_graph())
 
-  cg_tensor_dict = cg.get_tensors()
-  cg_sorted_keys = sorted(cg_tensor_dict.keys())
-  cg_sorted_items = []
-  for cg_key in cg_sorted_keys:
-    cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+  #cg_tensor_dict = cg.get_tensors()
+  #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+  #cg_sorted_items = []
+  #for cg_key in cg_sorted_keys:
+  #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-  cg_sorted_shape = sess.run(cg_sorted_items,
-                             feed_dict={features_tensor: input_batch})
-  cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                 'audioset.pickle')
+  #cg_sorted_shape = sess.run(cg_sorted_items,
+  #                           feed_dict={features_tensor: input_batch})
+  #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+  #               'audioset.pickle')
 
   print('VGGish embedding: ', embedding_batch[0])
   expected_embedding_mean = 0.131

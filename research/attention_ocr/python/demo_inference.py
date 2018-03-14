@@ -28,6 +28,7 @@ import data_provider
 
 from cg_profiler.cg_graph import CompGraph
 import os
+import sys
 FLAGS = flags.FLAGS
 common_flags.define()
 
@@ -94,24 +95,26 @@ def run(checkpoint, batch_size, dataset_name, image_path_pattern):
   options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
   run_metadata = tf.RunMetadata()
 
-  print('Start profiling')
+  print('Model attention_ocr start running')
+  sys.stdout.flush()
   predictions = sess.run(endpoints.predicted_text,
              feed_dict={images_placeholder: images_data},
              options=options, run_metadata=run_metadata)
-  cg = CompGraph('attention_ocr', run_metadata, tf.get_default_graph())
-  print('Profiling finished')
+  print('Model attention_ocr stop')
+  sys.stdout.flush()
+  #cg = CompGraph('attention_ocr', run_metadata, tf.get_default_graph())
 
-  cg_tensor_dict = cg.get_tensors()
-  cg_sorted_keys = sorted(cg_tensor_dict.keys())
-  cg_sorted_items = []
-  for cg_key in cg_sorted_keys:
-    cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+  #cg_tensor_dict = cg.get_tensors()
+  #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+  #cg_sorted_items = []
+  #for cg_key in cg_sorted_keys:
+  #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-  cg_sorted_shape = sess.run(cg_sorted_items,
-                             feed_dict={images_placeholder: images_data},
-                             options=options, run_metadata=run_metadata)
-  cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                 'attention_ocr.pickle')
+  #cg_sorted_shape = sess.run(cg_sorted_items,
+  #                           feed_dict={images_placeholder: images_data},
+  #                           options=options, run_metadata=run_metadata)
+  #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+  #               'attention_ocr.pickle')
 
   exit(0)
 

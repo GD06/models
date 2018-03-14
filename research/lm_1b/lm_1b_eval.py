@@ -145,20 +145,22 @@ def _EvalModel(dataset):
     options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
     run_metadata = tf.RunMetadata()
 
+    print('Model lm_1b start running')
     log_perp = sess.run(t['log_perplexity_out'], feed_dict=input_dict,
                         options=options, run_metadata=run_metadata)
+    print('Model lm_1b stop')
 
-    cg = CompGraph('lm_1b', run_metadata, t['log_perplexity_out'].graph)
+    #cg = CompGraph('lm_1b', run_metadata, t['log_perplexity_out'].graph)
 
-    cg_tensor_dict = cg.get_tensors()
-    cg_sorted_keys = sorted(cg_tensor_dict.keys())
-    cg_sorted_items = []
-    for cg_key in cg_sorted_keys:
-      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+    #cg_tensor_dict = cg.get_tensors()
+    #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    #cg_sorted_items = []
+    #for cg_key in cg_sorted_keys:
+    #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-    cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=input_dict)
-    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                   'lm_1b.pickle')
+    #cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=input_dict)
+    #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+    #               'lm_1b.pickle')
 
     if np.isnan(log_perp):
       sys.stderr.error('log_perplexity is Nan.\n')

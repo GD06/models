@@ -30,6 +30,7 @@ Example usage:
 
 
 import os.path
+import sys
 
 
 import nltk
@@ -256,19 +257,23 @@ class SkipThoughtsEncoder(object):
 
       options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
       run_metadata = tf.RunMetadata()
+      print('Model {} start running'.format(self._model_name))
+      sys.stdout.flush()
       results = sess.run("encoder/thought_vectors:0", feed_dict=feed_dict,
                          options=options, run_metadata=run_metadata)
-      cg = CompGraph(self._model_name, run_metadata, sess.graph)
+      print('Model {} stop'.format(self._model_name))
+      sys.stdout.flush()
+      #cg = CompGraph(self._model_name, run_metadata, sess.graph)
 
-      cg_tensor_dict = cg.get_tensors()
-      cg_sorted_keys = sorted(cg_tensor_dict.keys())
-      cg_sorted_items = []
-      for cg_key in cg_sorted_keys:
-        cg_sorted_items.append(cg_tensor_dict[cg_key].shape)
+      #cg_tensor_dict = cg.get_tensors()
+      #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+      #cg_sorted_items = []
+      #for cg_key in cg_sorted_keys:
+      #  cg_sorted_items.append(cg_tensor_dict[cg_key].shape)
 
       #cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
-      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_items)),
-                     '{}.pickle'.format(self._model_name))
+      #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_items)),
+      #               '{}.pickle'.format(self._model_name))
 
       exit(0)
       #thought_vectors.extend(

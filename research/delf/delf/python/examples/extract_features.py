@@ -154,21 +154,25 @@ def main(unused_argv):
         run_metadata = tf.RunMetadata()
 
         # Extract and save features.
+        print('Model delf_extract_features start running')
+        sys.stdout.flush()
         (locations_out, descriptors_out, feature_scales_out,
          attention_out) = sess.run(
              [locations, descriptors, feature_scales, attention],
             feed_dict=feed_dict, options=options, run_metadata=run_metadata)
-        cg = CompGraph('delf_extract_features', run_metadata, tf.get_default_graph())
+        print('Model delf_extract_features stop')
+        sys.stdout.flush()
+        #cg = CompGraph('delf_extract_features', run_metadata, tf.get_default_graph())
 
-        cg_tensor_dict = cg.get_tensors()
-        cg_sorted_keys = sorted(cg_tensor_dict.keys())
-        cg_sorted_items = []
-        for cg_key in cg_sorted_keys:
-          cg_sorted_items.append(cg_tensor_dict[cg_key].shape)
+        #cg_tensor_dict = cg.get_tensors()
+        #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+        #cg_sorted_items = []
+        #for cg_key in cg_sorted_keys:
+        #  cg_sorted_items.append(cg_tensor_dict[cg_key].shape)
 
         #cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
-        cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_items)),
-                       'delf_extract_features.pickle')
+        #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_items)),
+        #               'delf_extract_features.pickle')
 
         serialized_desc = feature_io.WriteToFile(
             out_desc_fullpath, locations_out, feature_scales_out,

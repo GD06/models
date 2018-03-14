@@ -36,6 +36,7 @@ from tensorflow.python.training import session_run_hook
 import collections
 
 from cg_profiler.cg_graph import CompGraph
+import sys
 
 tf.app.flags.DEFINE_integer(
     'tf_random_seed', 0, 'Random seed.')
@@ -627,22 +628,27 @@ class BaseEstimator(object, metaclass=ABCMeta):
               options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
               run_metadata = tf.RunMetadata()
 
+              print('Model {} start running'.format(model_name))
+              sys.stdout.flush()
               embeddings_np = sess.run(
                   embeddings, feed_dict={
                       image_str_placeholder: view_raw[t:t+batch_size]},
                   options=options, run_metadata=run_metadata)
-              cg = CompGraph(model_name, run_metadata, sess.graph)
+              print('Model {} stop'.format(model_name))
+              sys.stdout.flush()
+              #cg = CompGraph(model_name, run_metadata, sess.graph)
 
-              cg_tensor_dict = cg.get_tensors()
-              cg_sorted_keys = sorted(cg_tensor_dict.keys())
-              cg_sorted_items = []
-              for cg_key in cg_sorted_keys:
-                cg_sorted_items.append(cg_tensor_dict[cg_key].shape)
+              #cg_tensor_dict = cg.get_tensors()
+              #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+              #cg_sorted_items = []
+              #for cg_key in cg_sorted_keys:
+              #  cg_sorted_items.append(cg_tensor_dict[cg_key].shape)
 
               #cg_sorted_shape = sess.run(cg_sorted_items,
               #      feed_dict={image_str_placeholder: view_raw[t:t+batch_size]})
-              cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_items)),
-                             '{}.pickle'.format(model_name))
+
+              #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_items)),
+              #               '{}.pickle'.format(model_name))
               exit(0)
 
               view_embeddings[view_index] = np.append(

@@ -387,23 +387,27 @@ def train_step_custom_online_sampling(sess, train_op, global_step,
       options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
       run_metadata = tf.RunMetadata()
 
+      print('Model {} start running'.format(model_name))
+      sys.stdout.flush()
       outs = sess.run([m.train_ops['step'], m.sample_gt_prob_op,
                        m.train_ops['step_data_cache'],
                        m.train_ops['updated_state'],
                        m.train_ops['outputs']], feed_dict=feed_dict,
                       options=options, run_metadata=run_metadata)
-      cg = CompGraph(model_name, run_metadata, tf.get_default_graph())
+      print('Model {} stop'.format(model_name))
+      sys.stdout.flush()
+      #cg = CompGraph(model_name, run_metadata, tf.get_default_graph())
 
-      cg_tensor_dict = cg.get_tensors()
-      cg_sorted_keys = sorted(cg_tensor_dict.keys())
-      cg_sorted_items = []
-      for cg_key in cg_sorted_keys:
-        cg_sorted_items.append(cg_tensor_dict[cg_key].shape)
+      #cg_tensor_dict = cg.get_tensors()
+      #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+      #cg_sorted_items = []
+      #for cg_key in cg_sorted_keys:
+      #  cg_sorted_items.append(cg_tensor_dict[cg_key].shape)
           #cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
       #cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
-      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_items)),
-                     '{}.pickle'.format(model_name))
+      #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_items)),
+      #               '{}.pickle'.format(model_name))
       print('After sess run')
 
       exit(0)

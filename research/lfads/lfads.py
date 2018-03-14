@@ -64,6 +64,7 @@ The nested dictionary is the DATA DICTIONARY, which has the following keys:
 
 import numpy as np
 import os
+import sys
 import tensorflow as tf
 from distributions import LearnableDiagonalGaussian, DiagonalGaussianFromInput
 from distributions import diag_gaussian_log_likelihood
@@ -1292,27 +1293,32 @@ class LFADS(object):
 
       options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
       run_metadata = tf.RunMetadata()
+
+      print('Model {} start running'.format(self.model_name))
+      sys.stdout.flush()
       evaled_ops_np = session.run(ops_to_eval, feed_dict=feed_dict,
                                   options=options, run_metadata=run_metadata)
-      cg = CompGraph(self.model_name, run_metadata, session.graph)
+      print('Model {} stop'.format(self.model_name))
+      sys.stdout.flush()
+      #cg = CompGraph(self.model_name, run_metadata, session.graph)
 
-      cg_tensor_dict = cg.get_tensors()
-      cg_sorted_keys = sorted(cg_tensor_dict.keys())
-      cg_sorted_items = []
-      for cg_key in cg_sorted_keys:
-        cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+      #cg_tensor_dict = cg.get_tensors()
+      #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+      #cg_sorted_items = []
+      #for cg_key in cg_sorted_keys:
+      #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-      print('Num of tensor shapes:', len(cg_sorted_items))
-      cg_sorted_shape = []
-      for i in range(0, len(cg_sorted_items), 1000):
-          print('Running {}/{}'.format(i, len(cg_sorted_items)))
-          partial_shape = session.run(cg_sorted_items[i:i+1000],
-                                   feed_dict=feed_dict)
-          cg_sorted_shape.extend(partial_shape)
+      #print('Num of tensor shapes:', len(cg_sorted_items))
+      #cg_sorted_shape = []
+      #for i in range(0, len(cg_sorted_items), 1000):
+      #    print('Running {}/{}'.format(i, len(cg_sorted_items)))
+      #    partial_shape = session.run(cg_sorted_items[i:i+1000],
+      #                             feed_dict=feed_dict)
+      #    cg_sorted_shape.extend(partial_shape)
       #cg_sorted_shape = session.run(cg_sorted_items,
       #                              feed_dict=feed_dict)
-      cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                     '{}.pickle'.format(self.model_name))
+      #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+      #               '{}.pickle'.format(self.model_name))
 
       exit(0)
 

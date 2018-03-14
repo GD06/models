@@ -99,19 +99,22 @@ def run_eval(eval_ops, summary_writer, saver):
   run_metadata = tf.RunMetadata()
 
   tf.logging.info('Start profiling')
+  print('Model adversarial_text start running')
   sess.run(update_ops, options=options, run_metadata=run_metadata)
-  cg = CompGraph('adversarial_text', run_metadata, tf.get_default_graph())
+  print('Model adversarial_text stop')
+
+  #cg = CompGraph('adversarial_text', run_metadata, tf.get_default_graph())
   tf.logging.info('Profiling finished')
 
-  cg_tensor_dict = cg.get_tensors()
-  cg_sorted_keys = sorted(cg_tensor_dict.keys())
-  cg_sorted_items = []
-  for cg_key in cg_sorted_keys:
-    cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+  #cg_tensor_dict = cg.get_tensors()
+  #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+  #cg_sorted_items = []
+  #for cg_key in cg_sorted_keys:
+  #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-  cg_sorted_shape = sess.run(cg_sorted_items)
-  cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                     'adversarial_text.pickle')
+  #cg_sorted_shape = sess.run(cg_sorted_items)
+  #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+  #                   'adversarial_text.pickle')
   exit(0)
 
   sv = tf.train.Supervisor(logdir=FLAGS.eval_dir, saver=None, summary_op=None)

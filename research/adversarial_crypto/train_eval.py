@@ -233,46 +233,58 @@ def doeval(s, ac, n, itercount):
     run_metadata = tf.RunMetadata()
 
     # profile the alice model.
+    print('Model adversarial_crypto_alice start running')
+    sys.stdout.flush()
     alice = s.run(ac.encrypted, options=options, run_metadata=run_metadata)
-    cg = CompGraph('adversarial_crypto_alice', run_metadata, tf.get_default_graph())
+    print('Model adversarial_crypto_alice stop')
+    sys.stdout.flush()
+    #cg = CompGraph('adversarial_crypto_alice', run_metadata, tf.get_default_graph())
 
-    cg_tensor_dict = cg.get_tensors()
-    cg_sorted_keys = sorted(cg_tensor_dict.keys())
-    cg_sorted_items = []
-    for cg_key in cg_sorted_keys:
-      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+    #cg_tensor_dict = cg.get_tensors()
+    #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    #cg_sorted_items = []
+    #for cg_key in cg_sorted_keys:
+    #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-    cg_sorted_shape = s.run(cg_sorted_items)
-    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                   'adversarial_crypto_alice.pickle')
+    #cg_sorted_shape = s.run(cg_sorted_items)
+    #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+    #               'adversarial_crypto_alice.pickle')
 
     # profile the bob model
+    print('Model adversarial_crypto_bob start running')
+    sys.stdout.flush()
     bob = s.run(ac.decrypted, options=options, run_metadata=run_metadata)
-    cg = CompGraph('adversarial_crypto_bob', run_metadata, tf.get_default_graph())
+    print('Model adversarial_crypto_bob stop')
+    sys.stdout.flush()
+    #cg = CompGraph('adversarial_crypto_bob', run_metadata, tf.get_default_graph())
 
-    cg_tensor_dict = cg.get_tensors()
-    cg_sorted_keys = sorted(cg_tensor_dict.keys())
-    cg_sorted_items = []
-    for cg_key in cg_sorted_keys:
-      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+    #cg_tensor_dict = cg.get_tensors()
+    #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    #cg_sorted_items = []
+    #for cg_key in cg_sorted_keys:
+    #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-    cg_sorted_shape = s.run(cg_sorted_items)
-    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                   'adversarial_crypto_bob.pickle')
+    #cg_sorted_shape = s.run(cg_sorted_items)
+    #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+    #               'adversarial_crypto_bob.pickle')
 
     # profile the eve model
+    print('Model adversarial_crypto_eve start running')
+    sys.stdout.flush()
     eve = s.run(ac.eve_out, options=options, run_metadata=run_metadata)
-    cg = CompGraph('adversarial_crypto_eve', run_metadata, tf.get_default_graph())
+    print('Model adversarial_crypto_eve stop')
+    sys.stdout.flush()
+    #cg = CompGraph('adversarial_crypto_eve', run_metadata, tf.get_default_graph())
 
-    cg_tensor_dict = cg.get_tensors()
-    cg_sorted_keys = sorted(cg_tensor_dict.keys())
-    cg_sorted_items = []
-    for cg_key in cg_sorted_keys:
-      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+    #cg_tensor_dict = cg.get_tensors()
+    #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    #cg_sorted_items = []
+    #for cg_key in cg_sorted_keys:
+    #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-    cg_sorted_shape = s.run(cg_sorted_items)
-    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                   'adversarial_crypto_eve.pickle')
+    #cg_sorted_shape = s.run(cg_sorted_items)
+    #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+    #               'adversarial_crypto_eve.pickle')
 
     exit(0)
 

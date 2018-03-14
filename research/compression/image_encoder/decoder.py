@@ -23,6 +23,7 @@ python decoder.py --input_codes=output_codes.pkl --iteration=15 \
 """
 import io
 import os
+import sys
 
 import numpy as np
 import tensorflow as tf
@@ -116,19 +117,23 @@ def main(_):
     options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
     run_metadata = tf.RunMetadata()
 
+    print('Model image_decoder start running')
+    sys.stdout.flush()
     results = sess.run(outputs, feed_dict=feed_dict, options=options,
                        run_metadata=run_metadata)
-    cg = CompGraph('image_decoder', run_metadata, tf.get_default_graph())
+    print('Model image_decoder stop')
+    sys.stdout.flush()
+    #cg = CompGraph('image_decoder', run_metadata, tf.get_default_graph())
 
-    cg_tensor_dict = cg.get_tensors()
-    cg_sorted_keys = sorted(cg_tensor_dict.keys())
-    cg_sorted_items = []
-    for cg_key in cg_sorted_keys:
-      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+    #cg_tensor_dict = cg.get_tensors()
+    #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    #cg_sorted_items = []
+    #for cg_key in cg_sorted_keys:
+    #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-    cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
-    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                   'image_decoder.pickle')
+    #cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
+    #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+    #               'image_decoder.pickle')
 
     for index, result in enumerate(results):
       img = np.uint8(np.clip(result + 0.5, 0, 255))

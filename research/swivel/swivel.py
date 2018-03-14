@@ -64,6 +64,7 @@ import scipy.stats
 import tensorflow as tf
 
 from cg_profiler.cg_graph import CompGraph
+import sys
 
 flags = tf.app.flags
 
@@ -491,18 +492,22 @@ def main(_):
         options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
         run_metadata = tf.RunMetadata()
 
+        print('Model swivel start running')
+        sys.stdout.flush()
         loss = sess.run(model.loss_op, options=options, run_metadata=run_metadata)
-        cg = CompGraph('swivel', run_metadata, tf.get_default_graph())
+        print('Model swivel stop')
+        sys.stdout.flush()
+        #cg = CompGraph('swivel', run_metadata, tf.get_default_graph())
 
-        cg_tensor_dict = cg.get_tensors()
-        cg_sorted_keys = sorted(cg_tensor_dict.keys())
-        cg_sorted_items = []
-        for cg_key in cg_sorted_keys:
-          cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+        #cg_tensor_dict = cg.get_tensors()
+        #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+        #cg_sorted_items = []
+        #for cg_key in cg_sorted_keys:
+        #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-        cg_sorted_shape = sess.run(cg_sorted_items)
-        cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                       'swivel.pickle')
+        #cg_sorted_shape = sess.run(cg_sorted_items)
+        #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+        #               'swivel.pickle')
         exit(0)
 
         local_step += 1
