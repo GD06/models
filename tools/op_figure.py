@@ -42,7 +42,7 @@ pooling_op = OpPlot('Pooling')
 pooling_op.assign_attr({'marker': 'v', 'color': 'b'})
 pooling_op.assign_set({'MaxPool', 'AvgPool'})
 
-reduce_op = OpPlot('Reduce')
+reduce_op = OpPlot('Reduction')
 reduce_op.assign_attr({'marker': 's', 'color': 'c'})
 reduce_op.assign_set({'Sum', 'ArgMin', 'ArgMax', 'Mean', 'All', 'Min', 'Max',
                       'SoftmaxCrossEntropyWithLogits', 'Softmax',

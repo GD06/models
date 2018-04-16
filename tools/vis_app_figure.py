@@ -23,6 +23,10 @@ class AppPlot:
             self.area = app_attr['area']
         else:
             self.area = np.pi * (4 ** 2)
+        if 'alpha' in app_attr:
+            self.alpha = app_attr['alpha']
+        else:
+            self.alpha = 0.8
         return
 
     def assign_set(self, app_set):
@@ -47,7 +51,8 @@ def draw_app_domain(app_dict, output_dir, output_fig):
 
     nlp_app = AppPlot('NLP')
     nlp_app.assign_attr({'marker': '^', 'color': 'b'})
-    nlp_app.assign_set({'lm_1b', 'namignize_small', 'namignize_large', 'swivel', 'textsum'})
+    nlp_app.assign_set({'lm_1b', 'namignize_small', 'namignize_large', 'swivel', 'textsum',
+                        'skipt_thoughts_bi', 'skipt_thoughts_uni'})
 
     hybrid_app = AppPlot('CV + NLP')
     hybrid_app.assign_attr({'marker': 's', 'color': 'c'})
@@ -57,8 +62,8 @@ def draw_app_domain(app_dict, output_dir, output_fig):
     info_app.assign_attr({'marker': '+', 'color': 'g'})
     info_app.assign_set({'adversarial_crypto_alice', 'adversarial_crypto_bob',
                          'adversarial_crypto_eve', 'adversarial_text', 'audioset',
-                         'entropy_coder', 'image_encoder', 'image_decoder',
-                         'skipt_thoughts_bi', 'skipt_thoughts_uni'})
+                         'entropy_coder', 'image_encoder', 'image_decoder'})
+                         #'skipt_thoughts_bi', 'skipt_thoughts_uni'})
 
     other_app = AppPlot('Others')
     other_app.assign_attr({'marker': '*', 'color': 'm'})
@@ -88,6 +93,9 @@ def draw_app_domain(app_dict, output_dir, output_fig):
                     c=each_app_class.color, marker=each_app_class.marker,
                     label=each_app_class.name, alpha=0.8)
 
+    plt.xlim(-0.03, 1.03)
+    plt.ylim(-0.03, 1.03)
+
     plt.xlabel('$R_2$')
     plt.ylabel('$R_3$')
     plt.legend(loc='best')
@@ -98,12 +106,12 @@ def draw_app_domain(app_dict, output_dir, output_fig):
 def draw_app_fathom(app_dict, output_dir, output_fig):
 
     fathom_app = AppPlot('Fathom')
-    fathom_app.assign_attr({'marker': 's', 'color': 'b'})
+    fathom_app.assign_attr({'marker': '*', 'color': 'b', 'area': np.pi * (8 ** 2)})
     fathom_app.assign_set({'alexnet', 'autoenc', 'deepq', 'memnet',
                            'residual', 'seq2seq', 'speech', 'vgg'})
 
     model_zoo_app = AppPlot('TF Model Zoo')
-    model_zoo_app.assign_attr({'marker': 'o', 'color': 'r'})
+    model_zoo_app.assign_attr({'marker': 'o', 'color': 'r', 'alpha': 0.5})
     model_zoo_app.assign_set({})
 
     app_classes = [model_zoo_app, fathom_app]
@@ -123,11 +131,13 @@ def draw_app_fathom(app_dict, output_dir, output_fig):
     for each_app_class in app_classes:
         plt.scatter(each_app_class.x_list, each_app_class.y_list, s=each_app_class.area,
                     c=each_app_class.color, marker=each_app_class.marker,
-                    label=each_app_class.name, alpha=0.8)
+                    label=each_app_class.name, alpha=each_app_class.alpha)
 
-    plt.xlabel('$R_2$')
-    plt.ylabel('$R_3$')
-    plt.legend(loc='best')
+    plt.xlim(-0.03, 1.03)
+    plt.ylim(-0.03, 1.03)
+    plt.xlabel('$R_2$', fontsize='xx-large')
+    plt.ylabel('$R_3$', fontsize='xx-large')
+    plt.legend(loc='best', fontsize='x-large')
 
     plt.savefig(os.path.join(output_dir, output_fig), format='png')
 

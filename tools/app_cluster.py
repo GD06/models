@@ -22,6 +22,8 @@ def extract_app_feature(op_list, op_centers, max_locality):
     for i in range(len(op_centers)):
         each_center_time.append(0.0)
 
+    op_perf_dict = {}
+    op_center_dict = {}
     for each_op in op_list:
         if (not each_op.is_aid_op) and (each_op.comp_instrs != 0):
 
@@ -32,9 +34,18 @@ def extract_app_feature(op_list, op_centers, max_locality):
                          for c in op_centers]
             min_i = np.argmin(dis_array)
 
+            op_key_list = copy.deepcopy(sorted(each_op.input_tensor_name))
+            op_key_list.extend(sorted(each_op.output_tensor_name))
+            op_key = ','.join(op_key_list)
             elapsed_time = float(each_op.elapsed_time)
-            total_time += elapsed_time
-            each_center_time[min_i] += elapsed_time
+
+            if (op_key not in op_perf_dict) or (elapsed_time < op_perf_dict[op_key]):
+                op_perf_dict[op_key] = elapsed_time
+                op_center_dict[op_key] = min_i
+
+    for op_key in op_perf_dict.keys():
+        total_time += op_perf_dict[op_key]
+        each_center_time[op_center_dict[op_key]] += op_perf_dict[op_key]
 
     app_feature = [(t / total_time) for t in each_center_time]
     return app_feature
