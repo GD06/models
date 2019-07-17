@@ -249,24 +249,26 @@ class Model(object):
     for obs_place, obs in zip(self.single_observation, single_observation):
       feed_dict[obs_place] = obs
 
-    options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
-    run_metadata = tf.RunMetadata()
+    results = sess.run(outputs, feed_dict=feed_dict)
 
-    results = sess.run(outputs, feed_dict=feed_dict, options=options,
-                       run_metadata=run_metadata)
-    cg = CompGraph(FLAGS.model_name, run_metadata, tf.get_default_graph())
+    #options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+    #run_metadata = tf.RunMetadata()
 
-    cg_tensor_dict = cg.get_tensors()
-    cg_sorted_keys = sorted(cg_tensor_dict.keys())
-    cg_sorted_items = []
-    for cg_key in cg_sorted_keys:
-      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+    #results = sess.run(outputs, feed_dict=feed_dict, options=options,
+    #                   run_metadata=run_metadata)
+    #cg = CompGraph(FLAGS.model_name, run_metadata, tf.get_default_graph())
 
-    cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
-    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
-                   '{}.pickle'.format(FLAGS.model_name))
+    #cg_tensor_dict = cg.get_tensors()
+    #cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    #cg_sorted_items = []
+    #for cg_key in cg_sorted_keys:
+    #  cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
 
-    exit(0)
+    #cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
+    #cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+    #               '{}.pickle'.format(FLAGS.model_name))
+
+    #exit(0)
 
     return results
 
@@ -293,6 +295,36 @@ class Model(object):
       feed_dict[obs_place] = obs
 
     assert len(rewards) == time_len - 1
+
+    options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+    run_metadata = tf.RunMetadata()
+
+    results = sess.run(outputs, feed_dict=feed_dict, options=options,
+                       run_metadata=run_metadata)
+    cg = CompGraph(FLAGS.model_name, run_metadata, tf.get_default_graph())
+
+    cg_tensor_dict = cg.get_tensors()
+    cg_sorted_keys = sorted(cg_tensor_dict.keys())
+
+    try:
+      cg_sorted_items = []
+      for cg_key in cg_sorted_keys:
+        cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+      cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
+    except Exception as exep:
+      static_profile = True
+
+    if static_profile:
+      print("Use static shape information instead of dynamic profiling")
+      # print(cg_sorted_keys)
+      cg_sorted_shape = []
+      for cg_key in cg_sorted_keys:
+        cg_sorted_shape.append(cg_tensor_dict[cg_key].get_shape())
+
+    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                   '{}_train.pickle'.format(FLAGS.model_name))
+
+    exit(0)
 
     return sess.run(outputs, feed_dict=feed_dict)
 

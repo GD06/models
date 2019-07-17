@@ -76,11 +76,14 @@ class Operator:
 
     def _tolist(self, t_shape):
         rtval = []
-        for i in t_shape.as_list():
-            if i is None:
-                rtval.append(int(1))
-            else:
-                rtval.append(i)
+        try:
+            for i in t_shape.as_list():
+                if i is None:
+                    rtval.append(int(1))
+                else:
+                    rtval.append(i)
+        except Exception as excep:
+            rtval = [1]
         return rtval
 
     def _is_framework_aid_op(self):
@@ -95,7 +98,9 @@ class Operator:
                       'Unique', 'Assign', 'RandomShuffle', 'ParseExample',
                       'ReaderReadV2', 'WholeFileReaderV2', 'L2Loss', 'ApplyAdam',
                       'BroadcastGradientArgs', 'ConcatOffset', 'Multinomial',
-                      'LogUniformCandidateSampler', 'ComputeAccidentalHits'}
+                      'LogUniformCandidateSampler', 'ComputeAccidentalHits',
+                      'ControlTrigger', 'StackPushV2', 'StackPopV2', 'StackV2',
+                      'HistogramSummary', 'MergeSummary', 'ScalarSummary'}
         # How to deal with sort operators
 
         if self.keyword_filter is not None:
@@ -151,10 +156,11 @@ class Operator:
                         'SigmoidGrad', 'Reciprocal', 'Lgamma', 'RsqrtGrad',
                         'TopKV2', 'LRN', 'ZerosLike', 'UnsortedSegmentSum',
                         'ApplyGradientDescent', 'BiasAddGrad',
-                        'Conv2DBackpropFilter', 'SplitV'}
+                        'Conv2DBackpropFilter', 'SplitV', 'Prod',
+                        'CheckNumerics', 'AssignSub'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
-                          'SparseSoftmaxCrossEntropyWithLogits'}
+                          'SparseSoftmaxCrossEntropyWithLogits', 'LogSoftmax'}
 
         scatter_op_set = {'ScatterUpdate', 'ScatterAdd', 'ScatterSub'}
 
@@ -176,7 +182,8 @@ class Operator:
                 self.op_type == 'Slice' or
                 self.op_type == 'DynamicStitch' or
                 self.op_type == 'Gather' or
-                self.op_type == 'GatherV2'):
+                self.op_type == 'GatherV2' or
+                self.op_type == 'StridedSliceGrad'):
             return self._cal_mem_tableindex(tf_opr)
 
         if self.op_type in scatter_op_set:
@@ -228,7 +235,8 @@ class Operator:
                                 'TanhGrad', 'SigmoidGrad', 'Reciprocal', 'Lgamma',
                                 'RsqrtGrad', 'Relu6', 'Softplus', 'ZerosLike',
                                 'UnsortedSegmentSum', 'ApplyGradientDescent',
-                                'SplitV'})
+                                'SplitV', 'StridedSliceGrad', 'CheckNumerics',
+                                'AssignSub'})
 
         # 2-type elementwise operator
         elementwise_op_set.append({})
@@ -237,12 +245,12 @@ class Operator:
         elementwise_op_set.append({'SquaredDifference'})
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'ReduceJoin', 'Mean',
-                         'All', 'Max', 'Min', 'BiasAddGrad'}
+                         'All', 'Max', 'Min', 'BiasAddGrad', 'Prod'}
 
         pooling_op_set = {'MaxPool', 'AvgPool'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
-                          'SparseSoftmaxCrossEntropyWithLogits'}
+                          'SparseSoftmaxCrossEntropyWithLogits', 'LogSoftmax'}
 
         scatter_op_set = {'ScatterUpdate', 'ScatterAdd', 'ScatterSub'}
 
@@ -326,15 +334,17 @@ class Operator:
                               'FloorDiv', 'TanhGrad', 'SigmoidGrad', 'Reciprocal',
                               'Lgamma', 'RsqrtGrad', 'LinSpace', 'ZerosLike',
                               'UnsortedSegmentSum', 'ApplyGradientDescent',
-                              'Conv2DBackpropFilter', 'SplitV', 'ScatterSub'}
+                              'Conv2DBackpropFilter', 'SplitV', 'ScatterSub',
+                              'ScatterAdd', 'StridedSliceGrad', 'CheckNumerics',
+                              'AssignSub'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean', 'All', 'Min', 'Max',
-                         'BiasAddGrad'}
+                         'BiasAddGrad', 'Prod'}
 
         pooling_op_set = {'MaxPool', 'AvgPool'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
-                          'SparseSoftmaxCrossEntropyWithLogits'}
+                          'SparseSoftmaxCrossEntropyWithLogits', 'LogSoftmax'}
 
         if self.is_aid_op:
             return 0.0
