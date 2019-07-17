@@ -71,6 +71,36 @@ class Seq2SeqAttentionModel(object):
 
   def run_train_step(self, sess, article_batch, abstract_batch, targets,
                      article_lens, abstract_lens, loss_weights):
+
+    feed_dict={self._articles: article_batch,
+                self._abstracts: abstract_batch,
+                self._targets: targets,
+                self._article_lens: article_lens,
+                self._abstract_lens: abstract_lens,
+                self._loss_weights: loss_weights}
+
+    options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+    run_metadata = tf.RunMetadata()
+
+    results = sess.run(self._train_op, feed_dict=feed_dict, options=options,
+                       run_metadata=run_metadata)
+
+    cg = CompGraph("textsum_train", run_metadata, tf.get_default_graph())
+    sess.graph._unsafe_unfinalize()
+
+    cg_tensor_dict = cg.get_tensors()
+    cg_sorted_keys = sorted(cg_tensor_dict.keys())
+    cg_sorted_items = []
+    for cg_key in cg_sorted_keys:
+      cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+    cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
+    cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                   "textsum_train.pkl")
+
+    print("Finished one training iteration")
+    exit(0)
+
     to_return = [self._train_op, self._summaries, self._loss, self.global_step]
     return sess.run(to_return,
                     feed_dict={self._articles: article_batch,

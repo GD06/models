@@ -119,7 +119,7 @@ class Operator:
         irregular_op_set = {'Gather', 'GatherV2', 'SparseToDense',
                             'SparseTensorDenseAdd', 'TopKV2', 'ScatterUpdate',
                             'ScatterAdd', 'DynamicStitch', 'HashTableV2',
-                            'LookupTableV2'}
+                            'LookupTableV2', 'UnsortedSegmentSum', 'ScatterSub'}
 
         if self.op_type in irregular_op_set:
             return 0
@@ -149,12 +149,14 @@ class Operator:
                         'All', 'SparseTensorDenseAdd', 'LogicalOr',
                         'Conv3DBackpropInputV2', 'FloorDiv', 'TanhGrad',
                         'SigmoidGrad', 'Reciprocal', 'Lgamma', 'RsqrtGrad',
-                        'TopKV2', 'LRN', 'ZerosLike'}
+                        'TopKV2', 'LRN', 'ZerosLike', 'UnsortedSegmentSum',
+                        'ApplyGradientDescent', 'BiasAddGrad',
+                        'Conv2DBackpropFilter', 'SplitV'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
                           'SparseSoftmaxCrossEntropyWithLogits'}
 
-        scatter_op_set = {'ScatterUpdate', 'ScatterAdd'}
+        scatter_op_set = {'ScatterUpdate', 'ScatterAdd', 'ScatterSub'}
 
         if self.is_aid_op:
             return 0
@@ -199,7 +201,7 @@ class Operator:
 
             return total_mem_trans
 
-        print('op_type: ', self.op_type)
+        # print('op_type: ', self.op_type)
         raise NotImplementedError
 
     def _calculate_comp_instrs(self, tf_opr):
@@ -224,7 +226,9 @@ class Operator:
                                 'SpaceToBatchND', 'BatchToSpaceND', 'DynamicStitch',
                                 'ReverseSequence', 'FloorDiv', 'LogicalOr',
                                 'TanhGrad', 'SigmoidGrad', 'Reciprocal', 'Lgamma',
-                                'RsqrtGrad', 'Relu6', 'Softplus', 'ZerosLike'})
+                                'RsqrtGrad', 'Relu6', 'Softplus', 'ZerosLike',
+                                'UnsortedSegmentSum', 'ApplyGradientDescent',
+                                'SplitV'})
 
         # 2-type elementwise operator
         elementwise_op_set.append({})
@@ -233,14 +237,14 @@ class Operator:
         elementwise_op_set.append({'SquaredDifference'})
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'ReduceJoin', 'Mean',
-                         'All', 'Max', 'Min'}
+                         'All', 'Max', 'Min', 'BiasAddGrad'}
 
         pooling_op_set = {'MaxPool', 'AvgPool'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
                           'SparseSoftmaxCrossEntropyWithLogits'}
 
-        scatter_op_set = {'ScatterUpdate', 'ScatterAdd'}
+        scatter_op_set = {'ScatterUpdate', 'ScatterAdd', 'ScatterSub'}
 
         if self.is_aid_op:
             return 0
@@ -257,6 +261,9 @@ class Operator:
         if (self.op_type == 'Conv2D'
                 or self.op_type == 'Conv2DBackpropInput'):
             return self._cal_comp_conv2d(tf_opr)
+
+        if (self.op_type == 'Conv2DBackpropFilter'):
+            return self._cal_comp_conv2d_backprop_filter(tf_opr)
 
         if self.op_type == 'Conv3DBackpropInputV2':
             return self._cal_comp_conv3d(tf_opr)
@@ -293,7 +300,7 @@ class Operator:
             if self.op_type in elementwise_op_set[k]:
                 return self._cal_comp_elementwise(tf_opr, k + 1)
 
-        print('op_type: ', self.op_type)
+        # print('op_type: ', self.op_type)
         raise NotImplementedError
 
     def _calculate_parallelism(self, tf_opr):
@@ -317,9 +324,12 @@ class Operator:
                               'FloorMod', 'SpaceToBatchND', 'BatchToSpaceND',
                               'DynamicStitch', 'ReverseSequence', 'LogicalOr',
                               'FloorDiv', 'TanhGrad', 'SigmoidGrad', 'Reciprocal',
-                              'Lgamma', 'RsqrtGrad', 'LinSpace', 'ZerosLike'}
+                              'Lgamma', 'RsqrtGrad', 'LinSpace', 'ZerosLike',
+                              'UnsortedSegmentSum', 'ApplyGradientDescent',
+                              'Conv2DBackpropFilter', 'SplitV', 'ScatterSub'}
 
-        reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean', 'All', 'Min', 'Max'}
+        reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean', 'All', 'Min', 'Max',
+                         'BiasAddGrad'}
 
         pooling_op_set = {'MaxPool', 'AvgPool'}
 
@@ -369,7 +379,7 @@ class Operator:
         if self.op_type in elementwise_op_set:
             return 1.0
 
-        print('op_type: ', self.op_type)
+        # print('op_type: ', self.op_type)
         raise NotImplementedError
 
 
@@ -483,6 +493,25 @@ class Operator:
 
         return conv_args
 
+    def _extract_conv2d_backprop_filter_params(self, tf_opr):
+        conv_args = {}
+
+        assert len(self.input_tensor_shape[2]) == 4
+
+        if (tf_opr.get_attr("data_format") == b"NHWC"
+                or tf_opr.get_attr("data_format") == "NHWC"):
+            conv_args["ON"] = self.input_tensor_shape[2][0]
+            conv_args["OH"] = self.input_tensor_shape[2][1]
+            conv_args["OW"] = self.input_tensor_shape[2][2]
+            conv_args["OC"] = self.input_tensor_shape[2][3]
+        else:
+            conv_args["ON"] = self.input_tensor_shape[2][0]
+            conv_args["OC"] = self.input_tensor_shape[2][1]
+            conv_args["OH"] = self.input_tensor_shape[2][2]
+            conv_args["OW"] = self.input_tensor_shape[2][3]
+
+        return conv_args
+
     def _cal_comp_conv2d(self, tf_opr):
         comp_ops = 1
 
@@ -490,6 +519,15 @@ class Operator:
         comp_ops = 2 * comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
         #comp_ops = comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
         comp_ops = comp_ops * conv_args['IC'] * conv_args['FH'] * conv_args['FW']
+
+        return comp_ops
+
+    def _cal_comp_conv2d_backprop_filter(self, tf_opr):
+        comp_ops = 1
+
+        conv_args = self._extract_conv2d_backprop_filter_params(tf_opr)
+        comp_ops = 2 * comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
+        comp_ops = comp_ops * conv_args["ON"] * conv_args["OH"] * conv_args["OW"]
 
         return comp_ops
 
