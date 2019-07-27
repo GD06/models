@@ -1,4 +1,4 @@
 {
-	"data": "/home/xinfeng/tmp/dataset/synthetic_dataset",
+	"data": "/home/xinfeng/docker-input/datasets/entropy_coder/synthetic_dataset",
 	"unique_code_size": true
 }

@@ -306,19 +306,13 @@ class Model(object):
     cg_tensor_dict = cg.get_tensors()
     cg_sorted_keys = sorted(cg_tensor_dict.keys())
 
-    try:
-      cg_sorted_items = []
-      for cg_key in cg_sorted_keys:
-        cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
-      cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
-    except Exception as exep:
-      static_profile = True
-
-    if static_profile:
-      print("Use static shape information instead of dynamic profiling")
-      # print(cg_sorted_keys)
-      cg_sorted_shape = []
-      for cg_key in cg_sorted_keys:
+    cg_sorted_shape = []
+    for cg_key in cg_sorted_keys:
+      try:
+        cg_item = sess.run(cg_tensor_dict[cg_key], feed_dict=feed_dict)
+        cg_sorted_shape.append(list(cg_item.shape))
+      except Exception as excep:
+        #print(repr(excep))
         cg_sorted_shape.append(cg_tensor_dict[cg_key].get_shape())
 
     cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),

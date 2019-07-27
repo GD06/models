@@ -27,6 +27,7 @@ from entropy_coder.all_models import all_models
 # pylint: enable=unused-import
 from entropy_coder.model import model_factory
 
+from cg_profiler.cg_graph import CompGraph
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -170,7 +171,29 @@ def train():
               'train': model.train_op,
               'code_length': model.average_code_length
           }
-          np_tensors = sess.run(tf_tensors, feed_dict=feed_dict)
+
+          options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+          run_metadata = tf.RunMetadata()
+
+          np_tensors = sess.run(tf_tensors, feed_dict=feed_dict,
+                                options=options, run_metadata=run_metadata)
+
+          cg = CompGraph("entropy_coder_train", run_metadata, sess.graph)
+          sess.graph._unsafe_unfinalize()
+
+          cg_tensor_dict = cg.get_tensors()
+          cg_sorted_keys = sorted(cg_tensor_dict.keys())
+          cg_sorted_items = []
+          for cg_key in cg_sorted_keys:
+            cg_sorted_items.append(tf.shape(cg_tensor_dict[cg_key]))
+
+          cg_sorted_shape = sess.run(cg_sorted_items, feed_dict=feed_dict)
+          cg.op_analysis(dict(zip(cg_sorted_keys, cg_sorted_shape)),
+                         "entropy_coder_train.pkl")
+
+          print("Finished one training iteration!")
+          exit(0)
+
           print(np_tensors['code_length'])
 
       sv.Stop()

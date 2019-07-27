@@ -38,6 +38,7 @@ class Operator:
 
             t_shape = shape_dict[tensor_name]
             if isinstance(t_shape, tf.TensorShape):
+                # print(tensor_name, self._tolist(t_shape))
                 self.input_tensor_shape.append(self._tolist(t_shape))
             else:
                 self.input_tensor_shape.append(t_shape)
@@ -51,6 +52,7 @@ class Operator:
 
             t_shape = shape_dict[tensor_name]
             if isinstance(t_shape, tf.TensorShape):
+                # print(tensor_name, self._tolist(t_shape))
                 self.output_tensor_shape.append(self._tolist(t_shape))
             else:
                 self.output_tensor_shape.append(t_shape)
@@ -64,26 +66,28 @@ class Operator:
             return
 
         locality = self.mem_trans / self.comp_instrs
-        if locality > 100:
+        if (locality > 100) and (self.regular):
             print('mem_trans: {}, comp_instrs: {}'.format(self.mem_trans,
                                                           self.comp_instrs))
             print('Inputs:', self.input_tensor_shape)
             print('Outputs:', self.output_tensor_shape)
             print('op_type:', self.op_type)
-            raise NotImplementedError
+            # raise NotImplementedError
 
         return
 
     def _tolist(self, t_shape):
+        #batch_size = 400  # For pcl_rl models
+        batch_size = 128  # For skip_thoughts models
         rtval = []
         try:
             for i in t_shape.as_list():
                 if i is None:
-                    rtval.append(int(1))
+                    rtval.append(int(batch_size))
                 else:
                     rtval.append(i)
         except Exception as excep:
-            rtval = [1]
+            rtval = [batch_size]
         return rtval
 
     def _is_framework_aid_op(self):
@@ -100,7 +104,8 @@ class Operator:
                       'BroadcastGradientArgs', 'ConcatOffset', 'Multinomial',
                       'LogUniformCandidateSampler', 'ComputeAccidentalHits',
                       'ControlTrigger', 'StackPushV2', 'StackPopV2', 'StackV2',
-                      'HistogramSummary', 'MergeSummary', 'ScalarSummary'}
+                      'HistogramSummary', 'MergeSummary', 'ScalarSummary',
+                      'PaddingFIFOQueueV2', 'QueueDequeueV2'}
         # How to deal with sort operators
 
         if self.keyword_filter is not None:
@@ -124,7 +129,8 @@ class Operator:
         irregular_op_set = {'Gather', 'GatherV2', 'SparseToDense',
                             'SparseTensorDenseAdd', 'TopKV2', 'ScatterUpdate',
                             'ScatterAdd', 'DynamicStitch', 'HashTableV2',
-                            'LookupTableV2', 'UnsortedSegmentSum', 'ScatterSub'}
+                            'LookupTableV2', 'UnsortedSegmentSum', 'ScatterSub',
+                            'CropAndResizeGradImage'}
 
         if self.op_type in irregular_op_set:
             return 0
@@ -157,7 +163,12 @@ class Operator:
                         'TopKV2', 'LRN', 'ZerosLike', 'UnsortedSegmentSum',
                         'ApplyGradientDescent', 'BiasAddGrad',
                         'Conv2DBackpropFilter', 'SplitV', 'Prod',
-                        'CheckNumerics', 'AssignSub'}
+                        'CheckNumerics', 'AssignSub', 'AvgPoolGrad',
+                        'Relu6Grad', 'ApplyRMSProp',
+                        'DepthwiseConv2dNativeBackpropFilter',
+                        'DepthwiseConv2dNativeBackpropInput',
+                        'ReluGrad', 'MaxPoolGrad', 'ListDiff', 'ApplyMomentum',
+                        'Any', 'CropAndResizeGradImage'}
 
         softmax_op_set = {'SoftmaxCrossEntropyWithLogits', 'Softmax',
                           'SparseSoftmaxCrossEntropyWithLogits', 'LogSoftmax'}
@@ -236,13 +247,15 @@ class Operator:
                                 'RsqrtGrad', 'Relu6', 'Softplus', 'ZerosLike',
                                 'UnsortedSegmentSum', 'ApplyGradientDescent',
                                 'SplitV', 'StridedSliceGrad', 'CheckNumerics',
-                                'AssignSub'})
+                                'AssignSub', 'AvgPoolGrad', 'ReluGrad',
+                                'MaxPoolGrad', 'ListDiff', 'ApplyMomentum',
+                                'Any', 'CropAndResizeGradImage'})
 
         # 2-type elementwise operator
-        elementwise_op_set.append({})
+        elementwise_op_set.append({'Relu6Grad'})
 
         # 3-type elementwise operator
-        elementwise_op_set.append({'SquaredDifference'})
+        elementwise_op_set.append({'SquaredDifference', 'ApplyRMSProp'})
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'ReduceJoin', 'Mean',
                          'All', 'Max', 'Min', 'BiasAddGrad', 'Prod'}
@@ -266,11 +279,14 @@ class Operator:
         if self.op_type == 'BatchMatMul':
             return self._cal_comp_batchmatmul(tf_opr)
 
-        if (self.op_type == 'Conv2D'
-                or self.op_type == 'Conv2DBackpropInput'):
+        if (self.op_type == 'Conv2D'):
             return self._cal_comp_conv2d(tf_opr)
 
-        if (self.op_type == 'Conv2DBackpropFilter'):
+        if (self.op_type == 'Conv2DBackpropInput'):
+            return self._cal_comp_conv2d_backprop_input(tf_opr)
+
+        if (self.op_type == 'Conv2DBackpropFilter'
+                or self.op_type == 'DepthwiseConv2dNativeBackpropFilter'):
             return self._cal_comp_conv2d_backprop_filter(tf_opr)
 
         if self.op_type == 'Conv3DBackpropInputV2':
@@ -279,10 +295,14 @@ class Operator:
         if self.op_type == 'FusedBatchNorm':
             return self._cal_comp_fusedbatchnorm(tf_opr)
 
+        if self.op_type == 'FusedBatchNormGrad':
+            return self._cal_comp_fusedbatchnormgrad(tf_opr)
+
         if self.op_type == 'AddN':
             return self._cal_comp_addn(tf_opr)
 
-        if self.op_type == 'DepthwiseConv2dNative':
+        if (self.op_type == 'DepthwiseConv2dNative'
+                or self.op_type == 'DepthwiseConv2dNativeBackpropInput'):
             return self._cal_comp_depthwiseconv2d(tf_opr)
 
         if self.op_type == 'TopKV2':
@@ -336,7 +356,13 @@ class Operator:
                               'UnsortedSegmentSum', 'ApplyGradientDescent',
                               'Conv2DBackpropFilter', 'SplitV', 'ScatterSub',
                               'ScatterAdd', 'StridedSliceGrad', 'CheckNumerics',
-                              'AssignSub'}
+                              'AssignSub', 'FusedBatchNormGrad', 'AvgPoolGrad',
+                              'Relu6Grad', 'ApplyRMSProp',
+                              'DepthwiseConv2dNativeBackpropFilter',
+                              'DepthwiseConv2dNativeBackpropInput',
+                              'ReluGrad', 'MaxPoolGrad', 'ApplyMomentum',
+                              'Any', 'CropAndResizeGradImage', 'ListDiff',
+                              'Conv2DBackpropInput'}
 
         reduce_op_set = {'Sum', 'ArgMin', 'ArgMax', 'Mean', 'All', 'Min', 'Max',
                          'BiasAddGrad', 'Prod'}
@@ -358,8 +384,7 @@ class Operator:
         if self.op_type == 'BatchMatMul':
             return self._cal_par_batchmatmul(tf_opr)
 
-        if (self.op_type == 'Conv2D'
-                or self.op_type == 'Conv2DBackpropInput'):
+        if (self.op_type == 'Conv2D'):
             return self._cal_par_conv2d(tf_opr)
 
         if self.op_type == 'Conv3DBackpropInputV2':
@@ -532,6 +557,17 @@ class Operator:
 
         return comp_ops
 
+    def _cal_comp_conv2d_backprop_input(self, tf_opr):
+        comp_ops = 1
+
+        comp_ops = 2 * comp_ops * np.prod(np.array(self.output_tensor_shape[0]))
+        FH = self.input_tensor_shape[1][0]
+        FW = self.input_tensor_shape[1][1]
+        OC = self.input_tensor_shape[1][3]
+        comp_ops = comp_ops * FH * FW * OC
+
+        return comp_ops
+
     def _cal_comp_conv2d_backprop_filter(self, tf_opr):
         comp_ops = 1
 
@@ -699,8 +735,10 @@ class Operator:
         return par_ratio
 
     def _cal_mem_switch(self, tf_opr):
-        k = tf_opr.inputs[0].dtype.size
-        tmp_list = self.input_tensor_shape[0]
+        # k = tf_opr.inputs[0].dtype.size
+        # tmp_list = self.input_tensor_shape[0]
+        k = tf_opr.outputs[0].dtype.size
+        tmp_list = self.output_tensor_shape[0]
         return 2 * k * np.prod(np.array(tmp_list))
 
     def _cal_mem_where(self, tf_opr):
@@ -725,4 +763,16 @@ class Operator:
         mem_trans = (4 * np.prod(np.array(index_list)) +
                      2 * k * np.prod(np.array(tmp_list)))
         return mem_trans
+
+    def _cal_mem_fusedbatchnormgrad(self, tf_opr):
+        mem_trans = 0
+        for tmp_list in self.input_tensor_shape:
+            mem_trans += np.prod(np.array(tmp_list))
+        mem_trans = mem_trans * 2
+        return mem_trans
+
+    def _cal_comp_fusedbatchnormgrad(self, tf_opr):
+        tmp_list = self.input_tensor_shape[0]  # y_backprop
+        comp_instrs = 5 * np.prod(np.array(tmp_list))
+        return comp_instrs
 
